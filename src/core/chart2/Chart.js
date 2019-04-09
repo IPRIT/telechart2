@@ -48,7 +48,7 @@ export class Chart extends BaseChart {
   setInitialRange () {
     const globalMinX = this.xAxis[ 0 ];
     const globalMaxX = this.xAxis[ this.xAxis.length - 1 ];
-    const initialViewport = Math.floor( ( globalMaxX - globalMinX ) * 1 );
+    const initialViewport = Math.floor( ( globalMaxX - globalMinX ) * .1 );
     const viewportPadding = this.computeViewportPadding(
       globalMaxX - initialViewport,
       globalMaxX
