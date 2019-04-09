@@ -251,7 +251,7 @@ export class Series extends EventEmitter {
 
     let point = this._points[ startIndex ];
 
-    context.globalAlpha = 1;
+    context.globalAlpha = this._opacity;
     context.strokeStyle = this._color;
     context.lineWidth = 2;
     context.beginPath();
