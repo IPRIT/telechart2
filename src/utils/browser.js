@@ -43,7 +43,7 @@ export function passiveIfSupported (passive = true) {
 }
 
 export const isWebWorkerSupported = () => typeof window.Worker !== 'undefined';
-export const isOffscreenCanvasSupported = () => typeof window.OffscreenCanvas === 'undefined';
+export const isOffscreenCanvasSupported = () => typeof window.OffscreenCanvas !== 'undefined';
 
 /**
  * @return {*}
