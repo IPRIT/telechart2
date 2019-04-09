@@ -1,5 +1,5 @@
 import { EventEmitter } from '../misc/EventEmitter';
-import { arrayMinMax } from '../../utils';
+import { arrayMinMax, clampNumber } from '../../utils';
 import { Point } from '../point/Point';
 import { Tween, TweenEvents } from '../animation/Tween';
 import { ChartTypes } from '../chart2/ChartTypes';
@@ -190,9 +190,6 @@ export class Series extends EventEmitter {
     let pathUpdated = false;
 
     if (this._pathUpdateNeeded) {
-      this.updateViewportPoints();
-      // this.updatePath();
-
       this._pathUpdateNeeded = false;
       pathUpdated = true;
     }
@@ -200,7 +197,6 @@ export class Series extends EventEmitter {
     if (this._opacityAnimation
       && this._opacityAnimation.isRunning) {
       this._opacityAnimation.update( deltaTime );
-      // this.updatePathOpacity();
     }
 
     // only base charts has markers
@@ -227,7 +223,6 @@ export class Series extends EventEmitter {
 
   draw () {
     const context = this.chart.telechart.context;
-
     this.drawPath( context );
   }
 
@@ -248,22 +243,52 @@ export class Series extends EventEmitter {
     }
 
     const [ startIndex, endIndex ] = interval;
+    const [ minViewportX, maxViewportX ] = this.chart.viewportRange;
 
-    let point = this._points[ startIndex ];
+    const viewportPixelX = this.chart.viewportPixelX;
+    const viewportPixelY = this.chart.viewportPixelY;
+
+    const chartHeight = this.chart.chartHeight;
+    const chartOffsetTop = this.chart.seriesGroupTop;
+    const currentLocalMinY = this.chart.currentLocalMinY;
+    const chartBottomLineY = chartOffsetTop + chartHeight;
+
+    const dxOffset = minViewportX / viewportPixelX;
+    const dyOffset = currentLocalMinY / viewportPixelY;
+
+    let x = this._xAxis[ startIndex ];
+    let y = this._yAxis[ startIndex ];
 
     context.globalAlpha = this._opacity;
     context.strokeStyle = this._color;
     context.lineWidth = 2;
     context.beginPath();
-    context.lineJoin = 'round';
-    context.lineCap = 'round';
+    /*context.lineJoin = 'round';
+    context.lineCap = 'round';*/
+    context.lineJoin = 'bevel';
+    context.lineCap = 'butt';
 
-    context.moveTo( point.canvasX, point.canvasY );
+    context.moveTo(
+      x / viewportPixelX - dxOffset,
+      chartBottomLineY - y / viewportPixelY - dyOffset
+      /*clampNumber(
+        chartBottomLineY - y / viewportPixelY - dyOffset,
+        -1e6, 1e6
+      )*/
+    );
 
-    for (let i = startIndex; i <= endIndex; ++i) {
-      point = this._points[ i ];
+    for (let i = startIndex + 1; i <= endIndex; ++i) {
+      x = this._xAxis[ i ];
+      y = this._yAxis[ i ];
 
-      context.lineTo( point.canvasX, point.canvasY );
+      context.lineTo(
+        x / viewportPixelX - dxOffset,
+        chartBottomLineY - y / viewportPixelY - dyOffset
+        /* clampNumber(
+          chartBottomLineY - y / viewportPixelY - dyOffset,
+          -1e6, 1e6
+        )*/
+      );
     }
 
     context.stroke();
@@ -271,10 +296,64 @@ export class Series extends EventEmitter {
 
   /**
    * @param {CanvasRenderingContext2D} context
-   * @param {Array<number>} interval
+   * @param {Array<number>} array
    */
-  drawPathByArray (context, interval) {
+  drawPathByArray (context, array) {
+    if (array.length <= 1) {
+      return;
+    }
 
+    const startIndex = array[ 0 ];
+
+    const [ minViewportX, maxViewportX ] = this.chart.viewportRange;
+
+    const viewportPixelX = this.chart.viewportPixelX;
+    const viewportPixelY = this.chart.viewportPixelY;
+
+    const chartHeight = this.chart.chartHeight;
+    const chartOffsetTop = this.chart.seriesGroupTop;
+    const currentLocalMinY = this.chart.currentLocalMinY;
+    const chartBottomLineY = chartOffsetTop + chartHeight;
+
+    const dxOffset = minViewportX / viewportPixelX;
+    const dyOffset = currentLocalMinY / viewportPixelY;
+
+    let x = this._xAxis[ startIndex ];
+    let y = this._yAxis[ startIndex ];
+
+    context.globalAlpha = this._opacity;
+    context.strokeStyle = this._color;
+    context.lineWidth = 2;
+    context.beginPath();
+    /*context.lineJoin = 'round';
+    context.lineCap = 'round';*/
+    context.lineJoin = 'bevel';
+    context.lineCap = 'butt';
+
+    context.moveTo(
+      x / viewportPixelX - dxOffset,
+      chartBottomLineY - y / viewportPixelY - dyOffset
+      /*clampNumber(
+        chartBottomLineY - y / viewportPixelY - dyOffset,
+        -1e6, 1e6
+      )*/
+    );
+
+    for (let i = 1; i < array.length; ++i) {
+      x = this._xAxis[ array[ i ] ];
+      y = this._yAxis[ array[ i ] ];
+
+      context.lineTo(
+        x / viewportPixelX - dxOffset,
+        chartBottomLineY - y / viewportPixelY - dyOffset
+        /*clampNumber(
+          chartBottomLineY - y / viewportPixelY - dyOffset,
+          -1e6, 1e6
+        )*/
+      );
+    }
+
+    context.stroke();
   }
 
   /**

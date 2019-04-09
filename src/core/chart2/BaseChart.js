@@ -6,6 +6,7 @@ import { ChartTypes } from './ChartTypes';
 import { ChartEvents } from './events/ChartEvents';
 
 import {
+  animationTimeout,
   arraysEqual,
   binarySearchIndexes, ChartVariables,
   clampNumber,
@@ -251,6 +252,14 @@ export class BaseChart extends EventEmitter {
       this.initializeAxisY();
       this.initializeAxisX();*/
     }
+
+    const a = _ => {
+      animationTimeout( 500 ).then(_ => {
+        this.toggleSeries( 'y0' );
+        a();
+      });
+    };
+    a();
   }
 
   /**
@@ -990,7 +999,7 @@ export class BaseChart extends EventEmitter {
    * @return {number}
    */
   get chartWidth () {
-    return this.telechart.canvas.width;
+    return this.telechart.canvasWidth;
   }
 
   /**

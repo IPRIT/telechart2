@@ -188,15 +188,6 @@ export class Telechart2 extends EventEmitter {
     });
 
     this.nextFrame();
-
-    const t = () => {
-      setTimeout(_ => {
-        this._chart.toggleSeries( 'y0' );
-        this._chart.toggleSeries( 'y1' );
-        t();
-      }, 300);
-    };
-    t();
   }
 
   /**

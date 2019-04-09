@@ -18,6 +18,11 @@ export class TelechartApi extends EventEmitter {
   isOffscreenCanvas = false;
 
   /**
+   * @type {boolean}
+   */
+  enableOffscreenCanvas = ChartVariables.enableOffscreenCanvas;
+
+  /**
    * @type {HTMLCanvasElement}
    */
   canvas = null;
@@ -49,7 +54,7 @@ export class TelechartApi extends EventEmitter {
       environmentOptions: this._getEnvironmentOptions()
     };
 
-    this.isOffscreenCanvas = isOffscreenCanvasSupported();
+    this.isOffscreenCanvas = this.enableOffscreenCanvas && isOffscreenCanvasSupported();
 
     if (this.isOffscreenCanvas) {
       const offscreen = canvas.transferControlToOffscreen();
@@ -131,7 +136,7 @@ export class TelechartApi extends EventEmitter {
 
     this.canvasWidth = clampNumber(
       getElementWidth( parentNode ),
-      300
+      ChartVariables.minWidth
     );
     this.canvasHeight = ChartVariables.maxHeight;
 
