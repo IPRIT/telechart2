@@ -261,7 +261,7 @@ export class Telechart2 extends EventEmitter {
 
     this.nextFrame();
 
-    // setInterval(_=> this._chart.toggleAllSeriesExcept(`y${Math.floor( Math.random() * this._chart._series.length )}`), 500);
+    setInterval(_=> this._chart.toggleAllSeriesExcept(`y${Math.floor( Math.random() * this._chart._series.length )}`), 500);
   }
 
   /**
