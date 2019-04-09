@@ -1,0 +1,13 @@
+@mixin default-theme {
+  .telechart-root_theme_default#{&},
+  .telechart-root_theme_default & {
+    @content;
+  }
+}
+
+@mixin dark-theme {
+  .telechart-root_theme_dark#{&},
+  .telechart-root_theme_dark & {
+    @content;
+  }
+}

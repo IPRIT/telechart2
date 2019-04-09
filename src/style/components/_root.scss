@@ -1,0 +1,21 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('root', 'component') {
+  display: block;
+  position: relative;
+  transition: background-color $primary-transition;
+
+  &,
+  * {
+    font-family: 'Roboto', Arial, sans-serif;
+  }
+
+  @include modifier('theme_default') {
+    background-color: map_get($default-theme, background-color);
+  }
+
+  @include modifier('theme_dark') {
+    background-color: map_get($dark-theme, background-color);
+  }
+}

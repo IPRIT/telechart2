@@ -1,0 +1,155 @@
+@import "../../src/style/system/index";
+
+*, a, button, input {
+  -webkit-tap-highlight-color: rgba(black, 0);
+}
+
+html, body {
+  overflow-x: hidden;
+  min-height: 100%;
+}
+
+body {
+  margin: 0;
+  background-color: white;
+  transition: background-color $primary-transition;
+  padding-bottom: 100px;
+
+  &.default-theme {
+    background-color: white;
+
+    & .demo-theme-button {
+      background-color: rgba(white, .8);
+
+      .text-switcher {
+        &__switcher {
+          width: 47px;
+
+          span {
+            &:first-of-type {
+              transform: translate(0, 0) scale(1);
+              opacity: 1;
+            }
+
+            &:last-of-type {
+              transform: translate(0, 24px) scale(.95);
+              opacity: 0;
+            }
+          }
+        }
+      }
+    }
+  }
+
+  &.dark-theme {
+    background-color: $dark-color;
+
+    & .demo-theme-button {
+      background-color: rgba($dark-color, .9);
+      color: $link-color-dark;
+
+      &:active {
+        color: lighten($link-color-dark, 10);
+      }
+
+      .text-switcher {
+        &__switcher {
+          width: 35px;
+
+          span {
+            &:first-of-type {
+              transform: translate(0, -24px) scale(.95);
+              opacity: 0;
+            }
+
+            &:last-of-type {
+              transform: translate(0, 0) scale(1);
+              opacity: 1;
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+.demo-theme-button {
+  color: $link-color;
+  background: rgba(white, .9);
+  display: block;
+  padding: 16px 24px;
+  border-radius: 50px;
+  text-align: center;
+  border: 0;
+  font-size: 20px;
+  outline: none;
+  cursor: pointer;
+  transition: background-color $primary-transition, opacity $primary-transition, color $primary-transition;
+  position: fixed;
+  bottom: 16px;
+  left: 50%;
+  transform: translate(-50%, 0);
+  user-select: none;
+  touch-action: manipulation;
+  white-space: nowrap;
+  margin: 0;
+
+  .browser-safari & {
+    backdrop-filter: blur(10px);
+    -webkit-backdrop-filter: blur(10px);
+    background-color: transparent !important;
+    padding: 36px 16px !important;
+
+    @media screen and (min-width: $tablet-width) {
+      padding: 16px 24px !important;
+    }
+  }
+
+  &:active {
+    color: lighten($link-color, 10);
+  }
+
+  @media screen and (max-width: $tablet-width) {
+    cursor: default;
+    width: 100%;
+    padding: 36px 16px;
+    bottom: 0;
+    border-radius: 0;
+    left: 0;
+    text-align: center;
+    transform: translate(0, 0);
+  }
+}
+
+.text-switcher {
+  white-space: nowrap;
+
+  > span {
+    display: inline-block;
+    vertical-align: top;
+  }
+
+  &__switcher {
+    display: inline-block;
+    position: relative;
+    transition: width $primary-transition;
+    will-change: width;
+
+    span {
+      display: block;
+      position: absolute;
+      top: 0;
+      left: 0;
+      transition: transform $primary-transition, opacity $primary-transition;
+      will-change: transform;
+      transform-origin: 50% 50%;
+    }
+  }
+}
+
+.telechart-root {
+  @media screen and (min-width: $tablet-width) {
+    box-shadow: inset 0 0 0 1px rgba(174, 174, 174, 0.2);
+    padding-bottom: 3px;
+  }
+}

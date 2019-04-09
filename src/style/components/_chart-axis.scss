@@ -1,0 +1,5 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('chart-axis', 'component') {
+}

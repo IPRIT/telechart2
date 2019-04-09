@@ -1,0 +1,19 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('chart-axis-value', 'component') {
+  transition: fill $primary-transition;
+  fill: $axis-value-color;
+  font-size: 12px;
+  font-weight: 400;
+  pointer-events: none;
+  user-select: none;
+
+  @include default-theme {
+    fill: $axis-value-color !important;
+  }
+
+  @include dark-theme {
+    fill: $axis-value-color-dark !important;
+  }
+}

@@ -1,0 +1,14 @@
+@import "../system/index";
+
+@include block('chart-marker', 'component') {
+  transition: fill $primary-transition;
+  fill: white;
+
+  @include default-theme {
+    fill: white;
+  }
+
+  @include dark-theme {
+    fill: $dark-color;
+  }
+}

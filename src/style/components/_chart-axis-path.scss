@@ -1,0 +1,14 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('chart-axis-path', 'component') {
+  stroke: $axis-color;
+
+  @include default-theme {
+    stroke: $axis-color !important;
+  }
+
+  @include dark-theme {
+    stroke: $axis-color-dark !important;
+  }
+}

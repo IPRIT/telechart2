@@ -1,0 +1,4 @@
+:not(svg),
+:not(foreignObject) > svg {
+  transform-origin: 0px 0px;
+}

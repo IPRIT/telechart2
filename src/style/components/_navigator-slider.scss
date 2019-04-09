@@ -1,0 +1,10 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('navigator-slider', 'component') {
+  fill: rgba(163, 196, 220, 0.47) !important;
+  cursor: -webkit-grab;
+  cursor: grab;
+
+  touch-action: manipulation;
+}

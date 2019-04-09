@@ -1,0 +1,7 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('navigator-slider-controller', 'component') {
+  cursor: e-resize;
+  touch-action: manipulation;
+}

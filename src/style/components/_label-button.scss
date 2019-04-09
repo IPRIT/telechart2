@@ -1,0 +1,82 @@
+@import "../system/index";
+
+@include block('label-button', 'component') {
+  padding: 5px 15px 5px 6px;
+  box-shadow: 0 0 0 1px $border-color;
+  border: none;
+  background-color: transparent;
+  outline: none;
+  border-radius: 40px;
+  color: $border-color;
+
+  &:not(:last-of-type) {
+    margin-right: 16px;
+    margin-bottom: 16px;
+  }
+
+  @media screen and (min-width: $tablet-width) {
+    cursor: pointer;
+  }
+
+  @include modifier('selected') {
+    @include modifies-element('icon') {
+      path {
+        stroke-dashoffset: 15;
+      }
+    }
+
+    @include modifies-element('icon-mask') {
+      r: 10 !important;
+    }
+  }
+
+  @include modifier('animating') {
+    @include modifies-element('icon') {
+      path {
+        transition: stroke-dashoffset .2s $primary-transition-function .25s !important;
+      }
+    }
+
+    @include modifies-element('icon-mask') {
+      transition: fill $primary-transition, r $primary-transition !important;
+    }
+  }
+
+  @include element('icon') {
+    border-radius: 30px;
+    display: inline-block;
+    vertical-align: middle;
+
+    path {
+      transition: stroke-dashoffset .2s $primary-transition-function;
+      stroke-dasharray: 15;
+      stroke-dashoffset: 0;
+    }
+  }
+
+  @include element('icon-mask') {
+    r: 0 !important;
+    stroke-width: 0.5 !important;
+    fill: white;
+    transition: fill $primary-transition, r $primary-transition .25s;
+
+    @include dark-theme {
+      fill: $dark-color !important;
+    }
+  }
+
+  @include element('text') {
+    display: inline-block;
+    vertical-align: middle;
+    margin-left: 9px;
+    transition: color $primary-transition;
+
+    @include default-theme {
+      color: black;
+    }
+
+    @include dark-theme {
+      color: white;
+    }
+  }
+}

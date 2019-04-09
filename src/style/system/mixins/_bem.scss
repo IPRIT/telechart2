@@ -1,0 +1,10 @@
+@import "~sass-bem-utils/dist/sass-bem-utils";
+
+$bem-use-namespaces: true;
+$bem-block-namespaces: (
+  'utility': 'telechart',
+  'object': 'telechart',
+  'component': 'telechart',
+);
+$bem-modifier-separator: '_';
+$bem-element-separator: '__';

@@ -1,0 +1,6 @@
+@import "../system/index";
+
+@include block('chart-cursor', 'component') {
+  stroke: $cursor-color !important;
+  transition: stroke-opacity $primary-transition;
+}
