@@ -14,7 +14,7 @@ export const TimeRanges = {
 };
 
 export const ChartVariables = {
-  enableOffscreenCanvas: false,
+  enableOffscreenCanvas: true,
 
   maxHeight: 440,
   minWidth: 100,
