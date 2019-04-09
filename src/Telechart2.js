@@ -189,10 +189,14 @@ export class Telechart2 extends EventEmitter {
 
     this.nextFrame();
 
-    setTimeout(_ => {
-      this._chart.toggleSeries( 'y0' );
-      // this._chart.toggleSeries( 'y1' );
-    }, 1000);
+    const t = () => {
+      setTimeout(_ => {
+        this._chart.toggleSeries( 'y0' );
+        t();
+        // this._chart.toggleSeries( 'y1' );
+      }, 500);
+    };
+    t();
   }
 
   /**

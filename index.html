@@ -42,5 +42,9 @@
 
   <script src="https://polyfill.io/v3/polyfill.min.js?features=Object.assign%2CPromise%2CArray.prototype.includes%2CNumber.isNaN%2CArray.prototype.findIndex%2Cconsole.log%2Cconsole%2Cperformance.now%2CrequestAnimationFrame%2CSet"></script>
 
+  <script>
+    (function(){var script=document.createElement('script');script.onload=function(){var stats=new Stats();document.body.appendChild(stats.dom);requestAnimationFrame(function loop(){stats.update();requestAnimationFrame(loop)});};script.src='//mrdoob.github.io/stats.js/build/stats.min.js';document.head.appendChild(script);})()
+  </script>
+
 </body>
 </html>
