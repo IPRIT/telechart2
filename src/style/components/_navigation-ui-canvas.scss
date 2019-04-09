@@ -1,0 +1,10 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('navigation-ui-canvas', 'component') {
+  display: block;
+  position: absolute;
+  width: 100%;
+  top: 0;
+  left: 0;
+}

@@ -1,0 +1,19 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('header', 'component') {
+  display: flex;
+  flex-direction: row;
+  justify-content: space-between;
+  position: relative;
+  padding: 20px 12px 0;
+  color: map_get($default-theme, title-color);
+
+  @include dark-theme {
+    color: map_get($dark-theme, title-color);
+  }
+
+  @media screen and (max-width: $tablet-width) {
+    user-select: none;
+  }
+}

@@ -1,5 +1,3 @@
-// import './style/telechart.scss';
-
 import { AnimationSource, AnimationSourceEvents } from './core/animation/AnimationSource';
 import { Clock } from './core/misc/Clock';
 import { ChartThemes } from './utils/themes';
@@ -263,7 +261,7 @@ export class Telechart2 extends EventEmitter {
 
     this.nextFrame();
 
-    setInterval(_=> this._chart.toggleAllSeriesExcept(`y${Math.floor( Math.random() * this._chart._series.length )}`), 500);
+    // setInterval(_=> this._chart.toggleAllSeriesExcept(`y${Math.floor( Math.random() * this._chart._series.length )}`), 500);
   }
 
   /**

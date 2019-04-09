@@ -1,8 +1,4 @@
-import sourceData1 from '../samples/1/overview.json';
-import sourceData2 from '../samples/2/overview.json';
-import sourceData3 from '../samples/3/overview.json';
-import sourceData4 from '../samples/4/overview.json';
-import sourceData5 from '../samples/5/overview.json';
+import '../src/style/telechart.scss';
 
 import { TelechartApi } from '../src/core/api/TelechartApi';
 import { ChartThemes } from '../src/utils/themes';
@@ -15,6 +11,12 @@ import {
   parseQueryString,
   removeClass, setAttributes
 } from '../src/utils';
+
+import sourceData1 from '../samples/1/overview.json';
+import sourceData2 from '../samples/2/overview.json';
+import sourceData3 from '../samples/3/overview.json';
+import sourceData4 from '../samples/4/overview.json';
+import sourceData5 from '../samples/5/overview.json';
 
 const sources = [
   sourceData1,

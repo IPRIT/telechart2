@@ -1,4 +1,4 @@
-export const ROOT_CLASS_NAME = 'telechart-root';
+export const ROOT_CLASS_NAME = 'telechart2-root';
 
 /**
  * @param {string} themeName

@@ -1,0 +1,6 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('series-canvas', 'component') {
+  display: block;
+}

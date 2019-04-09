@@ -814,9 +814,7 @@ export class BaseChart extends EventEmitter {
     if (targetLine && !targetLine.isVisible) {
       // console.log( 'target 0 -> 1, rest 1/0 -> 0' );
       return this.eachSeries(line => {
-        line.label === label
-          ? line.setVisible()
-          : line.setInvisible();
+        line.setVisible();
       });
     }
 

@@ -37,3 +37,9 @@ eventBus.on(TelechartWorkerEvents.SET_THEME, ev => {
 
   telechart.setTheme( themeName );
 });
+
+eventBus.on(TelechartWorkerEvents.SET_TITLE, ev => {
+  let { title } = ev.data;
+
+  telechart.setTitle( title );
+});

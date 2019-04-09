@@ -1,8 +1,12 @@
 @import "root";
-@import "render";
-
+@import "header";
 @import "title";
+@import "series-canvas";
+@import "navigation";
+@import "navigation-series-canvas";
+@import "navigation-ui-canvas";
 
+/*
 @import "chart";
 @import "chart-cursor";
 @import "chart-marker";
@@ -19,4 +23,4 @@
 
 @import "label-buttons";
 @import "label-button";
-@import "ripple";
+@import "ripple";*/

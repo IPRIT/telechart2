@@ -3,17 +3,6 @@
 
 @include block('title', 'component') {
   font-weight: 600;
-  font-size: 18px;
-  color: map_get($default-theme, title-color);
-  fill: map_get($default-theme, title-color);
+  font-size: 16px;
   transition: $primary-transition;
-
-  @include dark-theme {
-    color: map_get($dark-theme, title-color);
-    fill: map_get($dark-theme, title-color);
-  }
-
-  @media screen and (max-width: $tablet-width) {
-    user-select: none;
-  }
 }

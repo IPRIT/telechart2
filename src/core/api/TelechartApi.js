@@ -3,10 +3,12 @@ import { TelechartWorkerEvents } from '../worker/worker-events';
 import { EventEmitter } from '../misc/EventEmitter';
 import { createTelechart } from './misc/createTelechart';
 import {
+  addClass,
+  ChartThemes,
   ChartVariables, clampNumber,
   createElement, cssText, getElementOffset,
-  getElementWidth,
-  isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported,
+  getElementWidth, interpolateThemeClass,
+  isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported, removeClass,
   resolveElement, setAttributes
 } from '../../utils';
 
@@ -60,14 +62,19 @@ export class TelechartApi extends EventEmitter {
     const container = resolveElement( mountTo );
 
     const root = this.rootElement = this._createRoot( container );
+    const header = this.headerElement = this._createHeader( root );
+
+    root.appendChild( header );
 
     const mainCanvas = this.mainCanvas = this._createMainCanvas();
     const navigationSeriesCanvas = this.navigationSeriesCanvas = this._createNavigationSeriesCanvas();
     const navigationUICanvas = this.navigationUICanvas = this._createNavigationUICanvas();
 
     root.appendChild( mainCanvas );
-    root.appendChild( navigationSeriesCanvas );
-    root.appendChild( navigationUICanvas );
+
+    const navigatorRoot = this.navigatorRoot = this._createNavigatorRoot( root );
+    navigatorRoot.appendChild( navigationSeriesCanvas );
+    navigatorRoot.appendChild( navigationUICanvas );
 
     this._updateMainCanvasDimensions( mainCanvas );
     this._updateNavigationSeriesCanvasDimensions( navigationSeriesCanvas );
@@ -109,6 +116,8 @@ export class TelechartApi extends EventEmitter {
       });
       console.log( this.telechart );
     }
+
+    this.setTitle( options.title );
   }
 
   initialize () {
@@ -127,6 +136,31 @@ export class TelechartApi extends EventEmitter {
     } else {
       this.telechart.setTheme( themeName );
     }
+
+    removeClass(this.rootElement, [
+      interpolateThemeClass( ChartThemes.default ),
+      interpolateThemeClass( ChartThemes.dark ),
+    ]);
+
+    addClass(this.rootElement, [
+      interpolateThemeClass( themeName )
+    ]);
+  }
+
+  /**
+   * @param {string} title
+   */
+  setTitle (title) {
+    if (this.isOffscreenCanvas) {
+      this.worker.postMessage({
+        type: TelechartWorkerEvents.SET_TITLE,
+        title
+      });
+    } else {
+      this.telechart.setTitle( title );
+    }
+
+    this.titleElement.innerHTML = title;
   }
 
   addEventListeners () {
@@ -316,12 +350,48 @@ export class TelechartApi extends EventEmitter {
   }
 
   /**
+   * @param container
+   * @private
+   */
+  _createHeader (container) {
+    const header = createElement('div', {
+      attrs: {
+        class: 'telechart2-header'
+      }
+    });
+
+    this._createTitle( header );
+
+    container.appendChild( header );
+
+    return header;
+  }
+
+  /**
+   * @param container
+   * @param text
+   * @return {Element}
+   * @private
+   */
+  _createTitle (container, text) {
+    const title = this.titleElement = createElement('span', {
+      attrs: {
+        class: 'telechart2-title'
+      }
+    }, text);
+
+    container.appendChild( title );
+
+    return title;
+  }
+
+  /**
    * @private
    */
   _createMainCanvas () {
     return createElement('canvas', {
       attrs: {
-        class: 'telechart-series-canvas'
+        class: 'telechart2-series-canvas'
       }
     });
   }
@@ -332,7 +402,7 @@ export class TelechartApi extends EventEmitter {
   _createNavigationSeriesCanvas () {
     return createElement('canvas', {
       attrs: {
-        class: 'telechart-navigation-series-canvas'
+        class: 'telechart2-navigation-series-canvas'
       }
     });
   }
@@ -343,8 +413,24 @@ export class TelechartApi extends EventEmitter {
   _createNavigationUICanvas () {
     return createElement('canvas', {
       attrs: {
-        class: 'telechart-navigation-ui-canvas'
+        class: 'telechart2-navigation-ui-canvas'
       }
     });
+  }
+
+  /**
+   * @return {Element}
+   * @private
+   */
+  _createNavigatorRoot (container) {
+    const nRoot = createElement('div', {
+      attrs: {
+        class: 'telechart2-navigation'
+      }
+    });
+
+    container.appendChild( nRoot );
+
+    return nRoot;
   }
 }

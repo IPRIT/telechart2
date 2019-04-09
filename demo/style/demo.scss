@@ -94,17 +94,6 @@ body {
   white-space: nowrap;
   margin: 0;
 
-  .browser-safari & {
-    backdrop-filter: blur(10px);
-    -webkit-backdrop-filter: blur(10px);
-    background-color: transparent !important;
-    padding: 36px 16px !important;
-
-    @media screen and (min-width: $tablet-width) {
-      padding: 16px 24px !important;
-    }
-  }
-
   &:active {
     color: lighten($link-color, 10);
   }
@@ -112,7 +101,7 @@ body {
   @media screen and (max-width: $tablet-width) {
     cursor: default;
     width: 100%;
-    padding: 36px 16px;
+    padding: 24px 16px 28px;
     bottom: 0;
     border-radius: 0;
     left: 0;
