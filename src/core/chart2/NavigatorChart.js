@@ -104,7 +104,7 @@ export class NavigatorChart extends BaseChart {
    * @type {Array<number>}
    * @private
    */
-  _navigatorRange = [ .7, 1 ];
+  _navigatorRange = [ 0, 1 ];
 
   /**
    * @type {Tween}

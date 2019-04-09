@@ -4,7 +4,7 @@ import { AnimationSource, AnimationSourceEvents } from './core/animation/Animati
 import { Clock } from './core/misc/Clock';
 import { ChartThemes } from './utils/themes';
 import { Chart } from './core/chart2/Chart';
-import { isOffscreenCanvasSupported } from './utils';
+import { EventEmitter } from './core/misc/EventEmitter';
 // import { Chart } from './core/chart/Chart';
 // import { NavigatorChart } from './core/chart/NavigatorChart';
 // import { LabelButtons } from './core/chart/LabelButtons';
@@ -18,7 +18,7 @@ let TELECHART_ID = 1;
 
 const isWorker = typeof self !== 'undefined';
 
-export class Telechart2 {
+export class Telechart2 extends EventEmitter {
 
   /**
    * @type {number}
@@ -146,7 +146,12 @@ export class Telechart2 {
 
     if (this.context) {
       this.updateContext();
+      this.onResize();
     }
+  }
+
+  onResize () {
+    this.emit( 'resize' );
   }
 
   /**
@@ -183,6 +188,11 @@ export class Telechart2 {
     });
 
     this.nextFrame();
+
+    setTimeout(_ => {
+      this._chart.toggleSeries( 'y0' );
+      this._chart.toggleSeries( 'y1' );
+    }, 1000);
   }
 
   /**

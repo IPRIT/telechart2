@@ -31,3 +31,9 @@ eventBus.on(TelechartWorkerEvents.UPDATE_ENVIRONMENT, ev => {
 
   telechart.setEnvironmentOptions( environmentOptions );
 });
+
+eventBus.on(TelechartWorkerEvents.SET_THEME, ev => {
+  let { themeName } = ev.data;
+
+  telechart.setTheme( themeName );
+});

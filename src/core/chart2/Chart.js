@@ -1,5 +1,5 @@
 import { BaseChart } from './BaseChart';
-import { ChartVariables, cssText } from '../../utils';
+import { ChartVariables } from '../../utils';
 import { ChartTypes } from './ChartTypes';
 
 export class Chart extends BaseChart {
@@ -13,7 +13,9 @@ export class Chart extends BaseChart {
   redrawChart () {
     const context = this.telechart.context;
 
-    context.clearRect( 0, ChartVariables.seriesTop, this.chartWidth, this.chartHeight );
+    // console.log( 0, 0, this.chartWidth, this.chartHeight + this.seriesGroupTop );
+
+    context.clearRect( 0, 0, this.chartWidth, this.chartHeight + this.seriesGroupTop );
 
     this.eachSeries(line => {
       line.render();
@@ -46,7 +48,7 @@ export class Chart extends BaseChart {
   setInitialRange () {
     const globalMinX = this.xAxis[ 0 ];
     const globalMaxX = this.xAxis[ this.xAxis.length - 1 ];
-    const initialViewport = Math.floor( ( globalMaxX - globalMinX ) * .3 );
+    const initialViewport = Math.floor( ( globalMaxX - globalMinX ) * 1 );
     const viewportPadding = this.computeViewportPadding(
       globalMaxX - initialViewport,
       globalMaxX

@@ -221,7 +221,10 @@ export class BaseChart extends EventEmitter {
    */
   _xAxisView = null;
 
-  seriesRenderNeeded = true;
+  /**
+   * @type {boolean}
+   */
+  redrawChartNeeded = true;
 
   /**
    * @param {Telechart2} context
@@ -254,11 +257,14 @@ export class BaseChart extends EventEmitter {
    * @param {number} deltaTime
    */
   update (deltaTime) {
+    let redrawChart = false;
+
     const minMaxYAnimation = this._minMaxYAnimation;
     const extremesUpdated = minMaxYAnimation && minMaxYAnimation.isRunning;
 
     if (extremesUpdated) {
       this._minMaxYAnimation.update( deltaTime );
+      redrawChart = true;
     }
 
     const hasRangeAnimation = this._rangeAnimation && this._rangeAnimation.isRunning;
@@ -277,6 +283,7 @@ export class BaseChart extends EventEmitter {
       }
 
       this._viewportRangeUpdateNeeded = false;
+      redrawChart = true;
     }
 
     if (this._viewportPointsGroupingNeeded) {
@@ -292,16 +299,19 @@ export class BaseChart extends EventEmitter {
     // cursor updating
     if (this._axisCursorUpdateNeeded && this.isChart) {
       // this._updateAxisCursor();
+      redrawChart = true;
 
       this._axisCursorUpdateNeeded = false;
     }
 
+    const isNavigatorPath = this.isNavigatorChart;
+
     this.eachSeries(line => {
       const hasOpacityAnimation = line.isHiding;
-      const isNavigatorPath = this.isNavigatorChart;
 
       if (extremesUpdated && !(isNavigatorPath && hasOpacityAnimation)) {
         line.requestPathUpdate();
+        redrawChart = true;
       }
 
       line.update( deltaTime );
@@ -323,17 +333,20 @@ export class BaseChart extends EventEmitter {
       this._xAxisView.update( deltaTime );
     }
 
-    this.seriesRenderNeeded = true;
+    this.redrawChartNeeded = extremesUpdated || redrawChart;
   }
 
   render () {
-    if (this.seriesRenderNeeded) {
+    if (this.redrawChartNeeded) {
       this.redrawChart();
 
-      this.seriesRenderNeeded = false;
+      this.redrawChartNeeded = false;
     }
   }
 
+  /**
+   * @abstract
+   */
   redrawChart () {
   }
 
@@ -708,11 +721,33 @@ export class BaseChart extends EventEmitter {
    * Initialize chart events
    */
   addEvents () {
+    this.telechart.on('resize', _=> {
+      this.onResize();
+    });
+
     this.eachSeries(line => {
       line.on('visibleChange', _ => {
         this.onSeriesVisibleChange( line );
       });
     });
+  }
+
+  onResize () {
+    // making requests for future animation update
+    this._viewportRangeUpdateNeeded = true;
+    this._viewportPointsGroupingNeeded = true;
+    this._axisCursorUpdateNeeded = true;
+
+    if (this._yAxisView) {
+      this._yAxisView.onChartResize();
+    }
+
+    if (this._xAxisView) {
+      this._xAxisView.onChartResize();
+    }
+
+    this.redrawChartNeeded = true;
+    this.redrawChart();
   }
 
   /**

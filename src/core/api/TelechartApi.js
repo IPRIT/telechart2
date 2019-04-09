@@ -71,8 +71,18 @@ export class TelechartApi extends EventEmitter {
     this.addEventListeners();
   }
 
+  /**
+   * @param {string} themeName
+   */
   setTheme (themeName) {
-    console.log( themeName );
+    if (this.isOffscreenCanvas) {
+      this.worker.postMessage({
+        type: TelechartWorkerEvents.SET_THEME,
+        themeName
+      });
+    } else {
+      this.telechart.setTheme( themeName );
+    }
   }
 
   addEventListeners () {
