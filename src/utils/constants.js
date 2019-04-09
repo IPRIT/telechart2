@@ -13,17 +13,23 @@ export const TimeRanges = {
   year: hour * 24 * 365
 };
 
+const chartPaddingTop = 15;
+const chartPaddingBottom = 24;
+
 export const ChartVariables = {
   enableOffscreenCanvas: true,
 
-  maxHeight: 440,
   minWidth: 100,
-  chartHeight: 290,
-  seriesTop: 65,
+
+  mainMaxHeight: 290 + chartPaddingTop + chartPaddingBottom,
+  mainChartHeight: 290,
+  mainChartOffsetTop: chartPaddingTop,
+  mainChartOffsetBottom: chartPaddingBottom,
 
   chartPaddingLeftRight: 12,
 
   // navigation chart
   navigationChartHeight: 40,
+  navigationChartUIHeight: 44,
   navigationChartOffsetY: 388
 };

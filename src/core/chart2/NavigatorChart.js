@@ -20,18 +20,6 @@ export class NavigatorChart extends BaseChart {
    * @type {number}
    * @private
    */
-  _chartHeight = 40;
-
-  /**
-   * @type {number}
-   * @private
-   */
-  _offsetY = ChartVariables.navigationChartOffsetY;
-
-  /**
-   * @type {number}
-   * @private
-   */
   _paddingTopBottom = 2;
 
   /**
@@ -44,18 +32,6 @@ export class NavigatorChart extends BaseChart {
    * @type {number}
    * @private
    */
-  _sliderControllerWidth = isTouchEventsSupported() ? 30 : 20;
-
-  /**
-   * @type {number}
-   * @private
-   */
-  _sliderControllerOffset = isTouchEventsSupported() ? 17 : 12;
-
-  /**
-   * @type {number}
-   * @private
-   */
   _sliderWidth = 0;
 
   /**
@@ -63,18 +39,6 @@ export class NavigatorChart extends BaseChart {
    * @private
    */
   _sliderLeftRightBorderWidth = 5;
-
-  /**
-   * @type {Element}
-   * @private
-   */
-  _overlayLeft = null;
-
-  /**
-   * @type {Element}
-   * @private
-   */
-  _overlayRight = null;
 
   /**
    * @type {number}
@@ -153,6 +117,21 @@ export class NavigatorChart extends BaseChart {
         this._navigationRangeAnimationObject.to
       );
     }
+  }
+
+  render () {
+    super.render();
+
+    // todo: render slider UI
+  }
+
+  redrawChart () {
+    const context = this.telechart.navigationSeriesContext;
+    context.clearRect( 0, 0, this.chartWidth, this.chartHeight );
+
+    this.eachSeries(line => {
+      line.render( context );
+    });
   }
 
   /**
@@ -239,7 +218,28 @@ export class NavigatorChart extends BaseChart {
    * @return {number}
    */
   get navigatorHeight () {
-    return this._chartHeight + this._paddingTopBottom * 2;
+    return ChartVariables.navigationChartUIHeight;
+  }
+
+  /**
+   * @return {number}
+   */
+  get seriesOffsetTop () {
+    return 0;
+  }
+
+  /**
+   * @return {CanvasRenderingContext2D}
+   */
+  get seriesContext () {
+    return this.telechart.navigationSeriesContext;
+  }
+
+  /**
+   * @return {CanvasRenderingContext2D}
+   */
+  get uiContext () {
+    return this.telechart.navigationUIContext;
   }
 
   /**

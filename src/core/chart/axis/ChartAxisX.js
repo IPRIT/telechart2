@@ -35,7 +35,7 @@ export class ChartAxisX extends ChartAxis {
   createValuesGroup () {
     this.valuesGroup = this.renderer.createGroup({
       class: 'telechart-chart-axes-values-x',
-      transform: `translate(0, ${this.chart.seriesGroupTop + this.chart.chartHeight + 18}) scale(1 1)`
+      transform: `translate(0, ${this.chart.seriesOffsetTop + this.chart.chartHeight + 18}) scale(1 1)`
     }, []);
   }
 

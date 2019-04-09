@@ -253,13 +253,13 @@ export class BaseChart extends EventEmitter {
       this.initializeAxisX();*/
     }
 
-    const a = _ => {
+    /*const a = _ => {
       animationTimeout( 500 ).then(_ => {
         this.toggleSeries( 'y0' );
         a();
       });
     };
-    a();
+    a();*/
   }
 
   /**
@@ -316,9 +316,9 @@ export class BaseChart extends EventEmitter {
     const isNavigatorPath = this.isNavigatorChart;
 
     this.eachSeries(line => {
-      const hasOpacityAnimation = line.isHiding;
+      const hasOpacityAnimation = line.isHiding || line.isShowing;
 
-      if (extremesUpdated && !(isNavigatorPath && hasOpacityAnimation)) {
+      if (extremesUpdated || hasOpacityAnimation) {
         line.requestPathUpdate();
         redrawChart = true;
       }
@@ -342,7 +342,7 @@ export class BaseChart extends EventEmitter {
       this._xAxisView.update( deltaTime );
     }
 
-    this.redrawChartNeeded = extremesUpdated || redrawChart;
+    this.redrawChartNeeded = this.redrawChartNeeded || redrawChart;
   }
 
   render () {
@@ -652,7 +652,7 @@ export class BaseChart extends EventEmitter {
    * Find new local min and max extremes among visible series
    */
   updateLocalExtremes () {
-    let localMinY = 0;
+    let localMinY = Infinity;
     let localMaxY = 0;
 
     this.eachSeries(line => {
@@ -809,6 +809,44 @@ export class BaseChart extends EventEmitter {
     }
   }
 
+  toggleAllSeriesExcept (label) {
+    const targetLine = this.getSeriesByLabel( label );
+    if (targetLine && !targetLine.isVisible) {
+      // console.log( 'target 0 -> 1, rest 1/0 -> 0' );
+      return this.eachSeries(line => {
+        line.label === label
+          ? line.setVisible()
+          : line.setInvisible();
+      });
+    }
+
+    let isSingleVisible = true;
+
+    for (let i = 0; i < this._series.length; ++i) {
+      if (this._series[ i ].isVisible
+        && this._series[ i ].label !== label) {
+        isSingleVisible = false;
+        break;
+      }
+    }
+
+    if (isSingleVisible) {
+      // console.log( 'target 1 -> 0, rest 0 -> 1' );
+      this.eachSeries(line => {
+        line.label === label
+          ? line.setInvisible()
+          : line.setVisible();
+      });
+    } else {
+      // console.log( 'target 1 -> 1, rest 1/0 -> 0' );
+      this.eachSeries(line => {
+        if (line.label !== label) {
+          line.setInvisible();
+        }
+      });
+    }
+  }
+
   /**
    * @param {Function} predicate
    * @return {Series}
@@ -858,7 +896,7 @@ export class BaseChart extends EventEmitter {
    * @return {number}
    */
   projectYToCanvas (y) {
-    const canvasY = this.seriesGroupTop + this.chartHeight - ( y - this._currentLocalMinY ) / this._viewportPixelY;
+    const canvasY = this.seriesOffsetTop + this.chartHeight - ( y - this._currentLocalMinY ) / this._viewportPixelY;
     return clampNumber( canvasY || 0, -1e6, 1e6 );
   }
 
@@ -1006,7 +1044,7 @@ export class BaseChart extends EventEmitter {
    * @return {number}
    */
   get chartHeight () {
-    return ChartVariables.chartHeight;
+    return ChartVariables.mainChartHeight;
   }
 
   /**
@@ -1019,8 +1057,8 @@ export class BaseChart extends EventEmitter {
   /**
    * @return {number}
    */
-  get seriesGroupTop () {
-    return ChartVariables.seriesTop;
+  get seriesOffsetTop () {
+    return ChartVariables.mainChartOffsetTop;
   }
 
   /**
@@ -1410,7 +1448,7 @@ export class BaseChart extends EventEmitter {
    */
   _insideChart ({ pageX, pageY }) {
     const { top, left } = this.telechart.canvasOffset;
-    const chartTop = pageY - top - ChartVariables.seriesTop;
+    const chartTop = pageY - top - ChartVariables.mainChartOffsetTop;
     const chartLeft = pageX - left;
 
     return chartTop >= 0 && chartTop <= this.chartHeight

@@ -197,6 +197,11 @@ export class Series extends EventEmitter {
     if (this._opacityAnimation
       && this._opacityAnimation.isRunning) {
       this._opacityAnimation.update( deltaTime );
+      pathUpdated = true;
+    }
+
+    if (pathUpdated) {
+      this.chart.redrawChartNeeded = true;
     }
 
     // only base charts has markers
@@ -217,12 +222,11 @@ export class Series extends EventEmitter {
     }
   }
 
-  render () {
-    this.draw();
+  render (context = this.chart.telechart.mainContext) {
+    this.draw( context );
   }
 
-  draw () {
-    const context = this.chart.telechart.context;
+  draw (context) {
     this.drawPath( context );
   }
 
@@ -243,13 +247,13 @@ export class Series extends EventEmitter {
     }
 
     const [ startIndex, endIndex ] = interval;
-    const [ minViewportX, maxViewportX ] = this.chart.viewportRange;
+    const [ minViewportX ] = this.chart.viewportRange;
 
     const viewportPixelX = this.chart.viewportPixelX;
     const viewportPixelY = this.chart.viewportPixelY;
 
     const chartHeight = this.chart.chartHeight;
-    const chartOffsetTop = this.chart.seriesGroupTop;
+    const chartOffsetTop = this.chart.seriesOffsetTop;
     const currentLocalMinY = this.chart.currentLocalMinY;
     const chartBottomLineY = chartOffsetTop + chartHeight;
 
@@ -261,7 +265,7 @@ export class Series extends EventEmitter {
 
     context.globalAlpha = this._opacity;
     context.strokeStyle = this._color;
-    context.lineWidth = 2;
+    context.lineWidth = this.strokeWidth;
     context.beginPath();
     /*context.lineJoin = 'round';
     context.lineCap = 'round';*/
@@ -270,11 +274,7 @@ export class Series extends EventEmitter {
 
     context.moveTo(
       x / viewportPixelX - dxOffset,
-      chartBottomLineY - y / viewportPixelY - dyOffset
-      /*clampNumber(
-        chartBottomLineY - y / viewportPixelY - dyOffset,
-        -1e6, 1e6
-      )*/
+      chartBottomLineY - ( y / viewportPixelY - dyOffset )
     );
 
     for (let i = startIndex + 1; i <= endIndex; ++i) {
@@ -283,11 +283,7 @@ export class Series extends EventEmitter {
 
       context.lineTo(
         x / viewportPixelX - dxOffset,
-        chartBottomLineY - y / viewportPixelY - dyOffset
-        /* clampNumber(
-          chartBottomLineY - y / viewportPixelY - dyOffset,
-          -1e6, 1e6
-        )*/
+        chartBottomLineY - ( y / viewportPixelY - dyOffset )
       );
     }
 
@@ -304,14 +300,13 @@ export class Series extends EventEmitter {
     }
 
     const startIndex = array[ 0 ];
-
-    const [ minViewportX, maxViewportX ] = this.chart.viewportRange;
+    const [ minViewportX ] = this.chart.viewportRange;
 
     const viewportPixelX = this.chart.viewportPixelX;
     const viewportPixelY = this.chart.viewportPixelY;
 
     const chartHeight = this.chart.chartHeight;
-    const chartOffsetTop = this.chart.seriesGroupTop;
+    const chartOffsetTop = this.chart.seriesOffsetTop;
     const currentLocalMinY = this.chart.currentLocalMinY;
     const chartBottomLineY = chartOffsetTop + chartHeight;
 
@@ -323,7 +318,7 @@ export class Series extends EventEmitter {
 
     context.globalAlpha = this._opacity;
     context.strokeStyle = this._color;
-    context.lineWidth = 2;
+    context.lineWidth = this.strokeWidth;
     context.beginPath();
     /*context.lineJoin = 'round';
     context.lineCap = 'round';*/
@@ -332,11 +327,7 @@ export class Series extends EventEmitter {
 
     context.moveTo(
       x / viewportPixelX - dxOffset,
-      chartBottomLineY - y / viewportPixelY - dyOffset
-      /*clampNumber(
-        chartBottomLineY - y / viewportPixelY - dyOffset,
-        -1e6, 1e6
-      )*/
+      chartBottomLineY - ( y / viewportPixelY - dyOffset )
     );
 
     for (let i = 1; i < array.length; ++i) {
@@ -345,11 +336,7 @@ export class Series extends EventEmitter {
 
       context.lineTo(
         x / viewportPixelX - dxOffset,
-        chartBottomLineY - y / viewportPixelY - dyOffset
-        /*clampNumber(
-          chartBottomLineY - y / viewportPixelY - dyOffset,
-          -1e6, 1e6
-        )*/
+        chartBottomLineY - ( y / viewportPixelY - dyOffset )
       );
     }
 

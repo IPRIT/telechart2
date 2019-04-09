@@ -6,12 +6,18 @@ import { Telechart2 } from '../../../Telechart2';
  */
 export function createTelechart (env) {
   const {
-    canvas,
+    mainCanvas,
+    navigationSeriesCanvas,
+    navigationUICanvas,
     settings: {
       options,
       environmentOptions
     }
   } = env;
 
-  return Telechart2.create( canvas, options, environmentOptions );
+  return Telechart2.create({
+    mainCanvas,
+    navigationSeriesCanvas,
+    navigationUICanvas
+  }, options, environmentOptions );
 }

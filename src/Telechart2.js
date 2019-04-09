@@ -5,6 +5,9 @@ import { Clock } from './core/misc/Clock';
 import { ChartThemes } from './utils/themes';
 import { Chart } from './core/chart2/Chart';
 import { EventEmitter } from './core/misc/EventEmitter';
+import { NavigatorChart } from './core/chart2/NavigatorChart';
+import { ChartEvents } from './core/chart2/events/ChartEvents';
+import { NavigatorChartEvents } from './core/chart2/events/NavigatorChartEvents';
 // import { Chart } from './core/chart/Chart';
 // import { NavigatorChart } from './core/chart/NavigatorChart';
 // import { LabelButtons } from './core/chart/LabelButtons';
@@ -40,7 +43,19 @@ export class Telechart2 extends EventEmitter {
    * @type {HTMLCanvasElement | OffscreenCanvas}
    * @private
    */
-  canvas = null;
+  mainCanvas = null;
+
+  /**
+   * @type {HTMLCanvasElement | OffscreenCanvas}
+   * @private
+   */
+  navigationSeriesCanvas = null;
+
+  /**
+   * @type {HTMLCanvasElement | OffscreenCanvas}
+   * @private
+   */
+  navigationUICanvas = null;
 
   /**
    * @type {CanvasRenderingContext2D | OffscreenCanvasRenderingContext2D}
@@ -103,16 +118,38 @@ export class Telechart2 extends EventEmitter {
   };
 
   /**
+   * @type {{top: number, left: number}}
+   */
+  navigationSeriesCanvasOffset = {
+    top: 0,
+    left: 0
+  };
+
+  /**
+   * @type {{top: number, left: number}}
+   */
+  navigationUICanvasOffset = {
+    top: 0,
+    left: 0
+  };
+
+  /**
    * @static
-   * @param {HTMLCanvasElement} canvas
+   * @param {HTMLCanvasElement} mainCanvas
+   * @param {HTMLCanvasElement} navigationSeriesCanvas
+   * @param {HTMLCanvasElement} navigationUICanvas
    * @param {Object} options
    * @param environmentOptions
    */
-  static create (canvas, options = {}, environmentOptions = {}) {
+  static create ({ mainCanvas, navigationSeriesCanvas, navigationUICanvas }, options = {}, environmentOptions = {}) {
     const chart = new Telechart2();
 
     chart.setOptions( options );
-    chart.setRenderer( canvas );
+
+    chart.setMainCanvas( mainCanvas );
+    chart.setNavigationSeriesCanvas( navigationSeriesCanvas );
+    chart.setNavigationUICanvas( navigationUICanvas );
+
     chart.setEnvironmentOptions( environmentOptions );
     chart.initialize();
 
@@ -132,20 +169,43 @@ export class Telechart2 extends EventEmitter {
   setEnvironmentOptions (options = {}) {
     const {
       devicePixelRatio = 1,
+
+      // main canvas
       canvasOffset,
       canvasWidth,
-      canvasHeight
+      canvasHeight,
+
+      // navigation canvas series
+      navigationSeriesCanvasOffset,
+      navigationSeriesCanvasWidth,
+      navigationSeriesCanvasHeight,
+
+      // navigation canvas UI
+      navigationUICanvasOffset,
+      navigationUICanvasWidth,
+      navigationUICanvasHeight
     } = options;
 
     this.environmentOptions = options;
 
     this.devicePixelRatio = devicePixelRatio;
+
     this.canvasOffset = canvasOffset;
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
 
-    if (this.context) {
-      this.updateContext();
+    this.navigationSeriesCanvasOffset = navigationSeriesCanvasOffset;
+    this.navigationSeriesCanvasWidth = navigationSeriesCanvasWidth;
+    this.navigationSeriesCanvasHeight = navigationSeriesCanvasHeight;
+
+    this.navigationUICanvasOffset = navigationUICanvasOffset;
+    this.navigationUICanvasWidth = navigationUICanvasWidth;
+    this.navigationUICanvasHeight = navigationUICanvasHeight;
+
+    if (this.mainContext) {
+      this.updateContexts();
+
+      // fire resize event if we have any context
       this.onResize();
     }
   }
@@ -157,8 +217,22 @@ export class Telechart2 extends EventEmitter {
   /**
    * @param {HTMLCanvasElement} canvas
    */
-  setRenderer (canvas) {
-    this.canvas = canvas;
+  setMainCanvas (canvas) {
+    this.mainCanvas = canvas;
+  }
+
+  /**
+   * @param {HTMLCanvasElement} canvas
+   */
+  setNavigationSeriesCanvas (canvas) {
+    this.navigationSeriesCanvas = canvas;
+  }
+
+  /**
+   * @param {HTMLCanvasElement} canvas
+   */
+  setNavigationUICanvas (canvas) {
+    this.navigationUICanvas = canvas;
   }
 
   /**
@@ -168,13 +242,13 @@ export class Telechart2 extends EventEmitter {
     this.setTheme( this.options.theme || ChartThemes.default );
     this.setTitle( this.options.title );
 
-    this.initializeContext();
+    this.initializeContexts();
 
     // create components
     this._createChart();
-    // this._createNavigatorChart();
+    this._createNavigatorChart();
     // this._createLabelButtons();
-    // this._addEventListeners();
+    this._addEventListeners();
 
     // create animation loop
     this._clock = new Clock();
@@ -188,6 +262,8 @@ export class Telechart2 extends EventEmitter {
     });
 
     this.nextFrame();
+
+    setInterval(_=> this._chart.toggleAllSeriesExcept(`y${Math.floor( Math.random() * this._chart._series.length )}`), 500);
   }
 
   /**
@@ -205,12 +281,13 @@ export class Telechart2 extends EventEmitter {
    */
   update (deltaTime) {
     this._chart.update( deltaTime );
-    // this._navigatorChart.update( deltaTime );
+    this._navigatorChart.update( deltaTime );
     // this._labelButtons.update( deltaTime );
   }
 
   render () {
     this._chart.render();
+    this._navigatorChart.render();
   }
 
   /**
@@ -233,21 +310,34 @@ export class Telechart2 extends EventEmitter {
   destroy () {
   }
 
-  initializeContext () {
-    this.context = this.canvas.getContext( '2d' );
+  initializeContexts () {
+    this.mainContext = this.mainCanvas.getContext( '2d' );
+    this.navigationSeriesContext = this.navigationSeriesCanvas.getContext( '2d' );
+    this.navigationUIContext = this.navigationUICanvas.getContext( '2d' );
 
-    // downscale to provide hidpi picture
-    this.context.scale( this.devicePixelRatio, this.devicePixelRatio );
+    this.updateContextsScale();
   }
 
-  updateContext () {
+  updateContexts () {
     if (isWorker) {
-      this.canvas.width = this.canvasWidth * this.devicePixelRatio;
-      this.canvas.height = this.canvasHeight * this.devicePixelRatio;
+      this.mainCanvas.width = this.canvasWidth * this.devicePixelRatio;
+      this.mainCanvas.height = this.canvasHeight * this.devicePixelRatio;
+
+      this.navigationSeriesCanvas.width = this.navigationSeriesCanvasWidth * this.devicePixelRatio;
+      this.navigationSeriesCanvas.height = this.navigationSeriesCanvasHeight * this.devicePixelRatio;
+
+      this.navigationUICanvas.width = this.navigationUICanvasWidth * this.devicePixelRatio;
+      this.navigationUICanvas.height = this.navigationUICanvasHeight * this.devicePixelRatio;
     }
 
+    this.updateContextsScale();
+  }
+
+  updateContextsScale () {
     // downscale to provide hidpi picture
-    this.context.scale( this.devicePixelRatio, this.devicePixelRatio );
+    this.mainContext.scale( this.devicePixelRatio, this.devicePixelRatio );
+    this.navigationSeriesContext.scale( this.devicePixelRatio, this.devicePixelRatio );
+    this.navigationUIContext.scale( this.devicePixelRatio, this.devicePixelRatio );
   }
 
   /**
@@ -277,7 +367,7 @@ export class Telechart2 extends EventEmitter {
    * @private
    */
   _createNavigatorChart () {
-    this._navigatorChart = new NavigatorChart( this );
+    this._navigatorChart = new NavigatorChart( this, this.options );
     this._navigatorChart.initialize();
   }
 

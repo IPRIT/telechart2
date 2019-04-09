@@ -11,11 +11,9 @@ export class Chart extends BaseChart {
   _type = ChartTypes.chart;
 
   redrawChart () {
-    const context = this.telechart.context;
+    const context = this.telechart.mainContext;
 
-    // console.log( 0, 0, this.chartWidth, this.chartHeight + this.seriesGroupTop );
-
-    context.clearRect( 0, 0, this.chartWidth, this.chartHeight + this.seriesGroupTop );
+    context.clearRect( 0, 0, this.chartWidth, ChartVariables.mainMaxHeight );
 
     this.eachSeries(line => {
       line.render();
@@ -75,7 +73,7 @@ export class Chart extends BaseChart {
    * @return {number}
    */
   get chartHeight () {
-    return ChartVariables.chartHeight;
+    return ChartVariables.mainChartHeight;
   }
 
   /**

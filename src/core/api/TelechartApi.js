@@ -23,9 +23,24 @@ export class TelechartApi extends EventEmitter {
   enableOffscreenCanvas = ChartVariables.enableOffscreenCanvas;
 
   /**
+   * @type {Element}
+   */
+  rootElement = null;
+
+  /**
    * @type {HTMLCanvasElement}
    */
-  canvas = null;
+  mainCanvas = null;
+
+  /**
+   * @type {HTMLCanvasElement}
+   */
+  navigationSeriesCanvas = null;
+
+  /**
+   * @type {HTMLCanvasElement}
+   */
+  navigationUICanvas = null;
 
   /**
    * @type {Worker}
@@ -44,10 +59,19 @@ export class TelechartApi extends EventEmitter {
   createChart (mountTo, options) {
     const container = resolveElement( mountTo );
 
-    const canvas = this.canvas = createElement('canvas');
-    container.appendChild( canvas );
+    const root = this.rootElement = this._createRoot( container );
 
-    this._updateDimensions( canvas );
+    const mainCanvas = this.mainCanvas = this._createMainCanvas();
+    const navigationSeriesCanvas = this.navigationSeriesCanvas = this._createNavigationSeriesCanvas();
+    const navigationUICanvas = this.navigationUICanvas = this._createNavigationUICanvas();
+
+    root.appendChild( mainCanvas );
+    root.appendChild( navigationSeriesCanvas );
+    root.appendChild( navigationUICanvas );
+
+    this._updateMainCanvasDimensions( mainCanvas );
+    this._updateNavigationSeriesCanvasDimensions( navigationSeriesCanvas );
+    this._updateNavigationUICanvasDimensions( navigationUICanvas );
 
     const settings = {
       options,
@@ -57,18 +81,33 @@ export class TelechartApi extends EventEmitter {
     this.isOffscreenCanvas = this.enableOffscreenCanvas && isOffscreenCanvasSupported();
 
     if (this.isOffscreenCanvas) {
-      const offscreen = canvas.transferControlToOffscreen();
+      const mainOffscreen = mainCanvas.transferControlToOffscreen();
+      const navigationSeriesOffscreen = navigationSeriesCanvas.transferControlToOffscreen();
+      const navigationUIOffscreen = navigationUICanvas.transferControlToOffscreen();
+
       const worker = new TelechartWorker();
 
       worker.postMessage({
         type: TelechartWorkerEvents.SETUP,
-        canvas: offscreen,
+        mainCanvas: mainOffscreen,
+        navigationSeriesCanvas: navigationSeriesOffscreen,
+        navigationUICanvas: navigationUIOffscreen,
         settings
-      }, [ offscreen ]);
+      }, [
+        mainOffscreen,
+        navigationSeriesOffscreen,
+        navigationUIOffscreen
+      ]);
 
       this.worker = worker;
     } else {
-      this.telechart = createTelechart({ canvas, settings });
+      this.telechart = createTelechart({
+        mainCanvas,
+        navigationSeriesCanvas,
+        navigationUICanvas,
+        settings
+      });
+      console.log( this.telechart );
     }
   }
 
@@ -122,7 +161,9 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _onResize (ev) {
-    this._updateDimensions();
+    this._updateMainCanvasDimensions();
+    this._updateNavigationSeriesCanvasDimensions();
+    this._updateNavigationUICanvasDimensions();
     this._updateEnvironmentOptions();
 
     this.emit( 'resize', ev );
@@ -131,24 +172,72 @@ export class TelechartApi extends EventEmitter {
   /**
    * @private
    */
-  _updateDimensions (canvas = this.canvas) {
+  _updateMainCanvasDimensions (canvas = this.mainCanvas) {
     const parentNode = canvas.parentNode;
 
-    this.canvasWidth = clampNumber(
+    this.mainCanvasWidth = clampNumber(
       getElementWidth( parentNode ),
       ChartVariables.minWidth
     );
-    this.canvasHeight = ChartVariables.maxHeight;
+    this.mainCanvasHeight = ChartVariables.mainMaxHeight;
 
     const devicePixelRatio = window.devicePixelRatio;
 
     setAttributes(canvas, {
       style: cssText({
-        width: `${this.canvasWidth}px`,
-        height: `${this.canvasHeight}px`
+        width: `${this.mainCanvasWidth}px`,
+        height: `${this.mainCanvasHeight}px`
       }),
-      width: (devicePixelRatio * this.canvasWidth) | 0,
-      height: (devicePixelRatio * this.canvasHeight) | 0
+      width: (devicePixelRatio * this.mainCanvasWidth) | 0,
+      height: (devicePixelRatio * this.mainCanvasHeight) | 0
+    });
+  }
+
+  /**
+   * @private
+   */
+  _updateNavigationSeriesCanvasDimensions (canvas = this.navigationSeriesCanvas) {
+    const parentNode = canvas.parentNode;
+
+    this.navigationSeriesCanvasWidth = clampNumber(
+      getElementWidth( parentNode ),
+      ChartVariables.minWidth
+    );
+    this.navigationSeriesCanvasHeight = ChartVariables.navigationChartHeight;
+
+    const devicePixelRatio = window.devicePixelRatio;
+
+    setAttributes(canvas, {
+      style: cssText({
+        width: `${this.navigationSeriesCanvasWidth}px`,
+        height: `${this.navigationSeriesCanvasHeight}px`
+      }),
+      width: (devicePixelRatio * this.navigationSeriesCanvasWidth) | 0,
+      height: (devicePixelRatio * this.navigationSeriesCanvasHeight) | 0
+    });
+  }
+
+  /**
+   * @private
+   */
+  _updateNavigationUICanvasDimensions (canvas = this.navigationUICanvas) {
+    const parentNode = canvas.parentNode;
+
+    this.navigationUICanvasWidth = clampNumber(
+      getElementWidth( parentNode ),
+      ChartVariables.minWidth
+    );
+    this.navigationUICanvasHeight = ChartVariables.navigationChartUIHeight;
+
+    const devicePixelRatio = window.devicePixelRatio;
+
+    setAttributes(canvas, {
+      style: cssText({
+        width: `${this.navigationUICanvasWidth}px`,
+        height: `${this.navigationUICanvasHeight}px`
+      }),
+      width: (devicePixelRatio * this.navigationUICanvasWidth) | 0,
+      height: (devicePixelRatio * this.navigationUICanvasHeight) | 0
     });
   }
 
@@ -174,17 +263,88 @@ export class TelechartApi extends EventEmitter {
    */
   _getEnvironmentOptions () {
     const devicePixelRatio = window.devicePixelRatio || 1;
-    const canvasOffset = getElementOffset( this.canvas );
-    const canvasWidth = this.canvasWidth;
-    const canvasHeight = this.canvasHeight;
+
+    const canvasOffset = getElementOffset( this.mainCanvas );
+    const canvasWidth = this.mainCanvasWidth;
+    const canvasHeight = this.mainCanvasHeight;
+
+    const navigationSeriesCanvasOffset = getElementOffset( this.navigationSeriesCanvas );
+    const navigationSeriesCanvasWidth = this.navigationSeriesCanvasWidth;
+    const navigationSeriesCanvasHeight = this.navigationSeriesCanvasHeight;
+
+    const navigationUICanvasOffset = getElementOffset( this.navigationUICanvas );
+    const navigationUICanvasWidth = this.navigationUICanvasWidth;
+    const navigationUICanvasHeight = this.navigationUICanvasHeight;
 
     return {
+      // system
       devicePixelRatio,
-      canvasOffset,
       isTouchEventsSupported: isTouchEventsSupported(),
       isTransformSupported: isTransformSupported(),
+
+      // main canvas
+      canvasOffset,
       canvasWidth,
-      canvasHeight
+      canvasHeight,
+
+      // navigation canvas series
+      navigationSeriesCanvasOffset,
+      navigationSeriesCanvasWidth,
+      navigationSeriesCanvasHeight,
+
+      // navigation canvas UI
+      navigationUICanvasOffset,
+      navigationUICanvasWidth,
+      navigationUICanvasHeight,
     };
+  }
+
+  /**
+   * @param container
+   * @private
+   */
+  _createRoot (container) {
+    const root = createElement('div', {
+      attrs: {
+        class: 'telechart2-root'
+      }
+    });
+
+    container.appendChild( root );
+
+    return root;
+  }
+
+  /**
+   * @private
+   */
+  _createMainCanvas () {
+    return createElement('canvas', {
+      attrs: {
+        class: 'telechart-series-canvas'
+      }
+    });
+  }
+
+  /**
+   * @private
+   */
+  _createNavigationSeriesCanvas () {
+    return createElement('canvas', {
+      attrs: {
+        class: 'telechart-navigation-series-canvas'
+      }
+    });
+  }
+
+  /**
+   * @private
+   */
+  _createNavigationUICanvas () {
+    return createElement('canvas', {
+      attrs: {
+        class: 'telechart-navigation-ui-canvas'
+      }
+    });
   }
 }

@@ -20,7 +20,7 @@ export class ChartAxisY extends ChartAxis {
   createValuesGroup () {
     this.valuesGroup = this.renderer.createGroup({
       class: 'telechart-chart-axes-values-y',
-      transform: `translate(0, ${this.chart.seriesGroupTop}) scale(1 1)`,
+      transform: `translate(0, ${this.chart.seriesOffsetTop}) scale(1 1)`,
       mask: `url(#${this.chart.chartMaskId})`
     }, []);
   }
@@ -28,7 +28,7 @@ export class ChartAxisY extends ChartAxis {
   createAxesGroup () {
     this.axesGroup = this.renderer.createGroup({
       class: 'telechart-chart-axes-y',
-      transform: `translate(0, ${this.chart.seriesGroupTop}) scale(1 1)`,
+      transform: `translate(0, ${this.chart.seriesOffsetTop}) scale(1 1)`,
       mask: `url(#${this.chart.chartMaskId})`
     }, []);
 
