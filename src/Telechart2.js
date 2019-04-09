@@ -191,7 +191,7 @@ export class Telechart2 extends EventEmitter {
 
     setTimeout(_ => {
       this._chart.toggleSeries( 'y0' );
-      this._chart.toggleSeries( 'y1' );
+      // this._chart.toggleSeries( 'y1' );
     }, 1000);
   }
 
