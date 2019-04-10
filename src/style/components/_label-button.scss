@@ -25,9 +25,11 @@
   outline: none;
   border-radius: 40px;
   color: white;
-  transition: transform $primary-transition;
+  transition: transform $primary-transition, opacity $primary-transition;
   will-change: transform;
   user-select: none;
+  opacity: 1;
+  transform: scale(1);
 
   &:not(:last-of-type) {
     margin-right: 6px;
@@ -57,14 +59,6 @@
     vertical-align: middle;
     margin-left: 1px;
     // transition: color $primary-transition;
-
-    @include default-theme {
-      color: black;
-    }
-
-    @include dark-theme {
-      color: white;
-    }
   }
 
   @include modifier('selected') {
@@ -82,5 +76,10 @@
   @include modifier('shaking') {
     animation-name: shaking;
     animation-duration: 500ms;
+  }
+
+  @include modifier('creating') {
+    opacity: 0;
+    transform: scale( .8 );
   }
 }

@@ -79,9 +79,9 @@ export class LabelButtons extends EventEmitter {
    * @private
    */
   _createButtons () {
-    this.buttons.forEach(line => {
+    this.buttons.forEach((line, index) => {
       this.container.appendChild(
-        this._createButton( line )
+        this._createButton( line, index )
       )
     });
   }
@@ -91,29 +91,32 @@ export class LabelButtons extends EventEmitter {
    * @return {Element}
    * @private
    */
-  _createButton (line) {
+  _createButton (line, index) {
+    const buttonClass = 'telechart2-label-button';
+    const creatingClass = 'telechart2-label-button_creating';
+    const selectedClass = 'telechart2-label-button_selected';
+
     const buttonIcon = this._createSvgIcon( line.color );
 
     const buttonText = createElement('div', {
       attrs: {
-        class: 'telechart2-label-button__text'
+        class: `${buttonClass}__text`
       }
     }, line.name);
 
     const button = createElement('button', {
       attrs: {
-        class: 'telechart2-label-button telechart2-label-button_selected',
+        class: `${buttonClass} ${selectedClass} ${creatingClass}`,
         style: cssText({
-          backgroundColor: line.color
+          backgroundColor: line.color,
+          transitionDelay: `${index * 10}ms`
         })
       }
     }, [ buttonIcon, buttonText ]);
 
-    const selectedClass = 'telechart2-label-button_selected';
-
-    if (!line.visible) {
-      removeClass( button, selectedClass );
-    }
+    animationTimeout( 100 ).then(_ => {
+      removeClass( button, creatingClass );
+    });
 
     button.addEventListener('click', _ => {
       const visible = this.buttons.filter( line => line.visible );
