@@ -180,7 +180,10 @@ export class Series extends EventEmitter {
    * Initializes series with options
    */
   initialize () {
-    this._createPoints();
+    // this._createPoints();
+    if (this.isPrerenderSupported) {
+      this._prerender();
+    }
   }
 
   /**
@@ -231,16 +234,15 @@ export class Series extends EventEmitter {
   }
 
   drawPath (context) {
-    this.chart._useViewportPointsInterval
-      ? this.drawPathByInterval( context, this.chart._viewportPointsIndexes )
-      : this.drawPathByArray( context, this.chart._viewportPointsIndexes );
+    this.drawPathByInterval( context, this.chart._viewportPointsIndexes, this.chart._viewportPointsStep )
   }
 
   /**
    * @param {CanvasRenderingContext2D} context
    * @param {Array<number>} interval
+   * @param {number} step
    */
-  drawPathByInterval (context, interval) {
+  drawPathByInterval (context, interval, step = 1) {
     if (!interval.length
       || interval[ 1 ] - interval[ 0 ] <= 0) {
       return;
@@ -250,99 +252,22 @@ export class Series extends EventEmitter {
       return;
     }
 
-    const [ startIndex, endIndex ] = interval;
-    const [ minViewportX ] = this.chart.viewportRange;
-
-    const viewportPixelX = this.chart.viewportPixelX;
-    const viewportPixelY = this.chart.viewportPixelY;
-
-    const chartHeight = this.chart.chartHeight;
-    const chartOffsetTop = this.chart.seriesOffsetTop;
-    const currentLocalMinY = this.chart.currentLocalMinY;
-    const chartBottomLineY = chartOffsetTop + chartHeight;
-
-    const dxOffset = minViewportX / viewportPixelX;
-    const dyOffset = currentLocalMinY / viewportPixelY;
-
     context.globalAlpha = this._opacity;
     context.strokeStyle = this._color;
     context.lineWidth = this.strokeWidth;
-    /*context.lineJoin = 'round';
-    context.lineCap = 'round';*/
     context.lineJoin = 'bevel';
     context.lineCap = 'butt';
     context.beginPath();
 
-    context.moveTo(
-      this._xAxis[ startIndex ] / viewportPixelX - dxOffset,
-      chartBottomLineY - ( this._yAxis[ startIndex ] / viewportPixelY - dyOffset )
-    );
+    const usePath2D = this.isPrerenderSupported;
+    const path2D = usePath2D ? new Path2D() : null;
+    const ctx = usePath2D ? path2D : context;
 
-    for (let i = startIndex + 1; i <= endIndex; ++i) {
-      context.lineTo(
-        this._xAxis[ i ] / viewportPixelX - dxOffset,
-        chartBottomLineY - ( this._yAxis[ i ] / viewportPixelY - dyOffset )
-      );
-    }
+    this._drawPathToContext( ctx, interval, step );
 
-    context.stroke();
-  }
-
-  /**
-   * @param {CanvasRenderingContext2D} context
-   * @param {Array<number>} array
-   */
-  drawPathByArray (context, array) {
-    if (array.length <= 1) {
-      return;
-    }
-
-    if (!this._opacity) {
-      return;
-    }
-
-    const startIndex = array[ 0 ];
-    const [ minViewportX ] = this.chart.viewportRange;
-
-    const viewportPixelX = this.chart.viewportPixelX;
-    const viewportPixelY = this.chart.viewportPixelY;
-
-    const chartHeight = this.chart.chartHeight;
-    const chartOffsetTop = this.chart.seriesOffsetTop;
-    const currentLocalMinY = this.chart.currentLocalMinY;
-    const chartBottomLineY = chartOffsetTop + chartHeight;
-
-    const dxOffset = minViewportX / viewportPixelX;
-    const dyOffset = currentLocalMinY / viewportPixelY;
-
-    let x = this._xAxis[ startIndex ];
-    let y = this._yAxis[ startIndex ];
-
-    context.globalAlpha = this._opacity;
-    context.strokeStyle = this._color;
-    context.lineWidth = this.strokeWidth;
-    /*context.lineJoin = 'round';
-    context.lineCap = 'round';*/
-    context.lineJoin = 'bevel';
-    context.lineCap = 'butt';
-    context.beginPath();
-
-    context.moveTo(
-      this._xAxis[ startIndex ] / viewportPixelX - dxOffset,
-      chartBottomLineY - ( this._yAxis[ startIndex ] / viewportPixelY - dyOffset )
-    );
-
-    let curIndex = startIndex;
-    for (let i = 1; i < array.length; ++i) {
-      curIndex = array[ i ];
-
-      context.lineTo(
-        this._xAxis[ curIndex ] / viewportPixelX - dxOffset,
-        chartBottomLineY - ( this._yAxis[ curIndex ] / viewportPixelY - dyOffset )
-      );
-    }
-
-    context.stroke();
+    usePath2D
+      ? context.stroke( path2D )
+      : context.stroke();
   }
 
   /**
@@ -402,45 +327,6 @@ export class Series extends EventEmitter {
 
     this._localMinY = minValue;
     this._localMaxY = maxValue;
-  }
-
-  /**
-   * Updates viewport points
-   */
-  updateViewportPoints () {
-    this.chart._useViewportPointsInterval
-      ? this.updateViewportPointsByInterval()
-      : this.updateViewportPointsByArray();
-  }
-
-  /**
-   * Updates points by array of points
-   */
-  updateViewportPointsByArray () {
-    const indexes = this.chart._viewportPointsIndexes;
-
-    for (let i = 0; i < indexes.length; ++i) {
-      const pointIndex = indexes[ i ];
-      const point = this._points[ pointIndex ];
-      point.setCanvasXY(
-        this.chart.projectXToCanvas( point.x ),
-        this.chart.projectYToCanvas( point.y ),
-      );
-    }
-  }
-
-  /**
-   * Updates points by interval
-   */
-  updateViewportPointsByInterval () {
-    const [ startIndex, endIndex ] = this.chart._viewportPointsIndexes;
-    for (let i = startIndex; i <= endIndex; ++i) {
-      const point = this._points[ i ];
-      point.setCanvasXY(
-        this.chart.projectXToCanvas( point.x ),
-        this.chart.projectYToCanvas( point.y ),
-      );
-    }
   }
 
   /**
@@ -526,6 +412,14 @@ export class Series extends EventEmitter {
    */
   get isHiding () {
     return this._opacityAnimationType === OpacityAnimationType.hiding;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  get isPrerenderSupported () {
+    return typeof self.Path2D !== 'undefined'
+      && typeof self.DOMMatrix !== 'undefined';
   }
 
   /**
@@ -672,5 +566,46 @@ export class Series extends EventEmitter {
     this._markerAnimation.on( TweenEvents.CANCELLED, onFinished );
 
     this._markerAnimation.start();
+  }
+
+  _drawPathToContext (context, interval, step = 1) {
+    if (!interval.length
+      || interval[ 1 ] - interval[ 0 ] <= 0) {
+      return;
+    }
+
+    if (!this._opacity) {
+      return;
+    }
+
+    const [ startIndex, endIndex ] = interval;
+    const [ minViewportX ] = this.chart.viewportRange;
+
+    const viewportPixelX = this.chart.viewportPixelX;
+    const viewportPixelY = this.chart.viewportPixelY;
+
+    const chartHeight = this.chart.chartHeight;
+    const chartOffsetTop = this.chart.seriesOffsetTop;
+    const currentLocalMinY = this.chart.currentLocalMinY;
+    const chartBottomLineY = chartOffsetTop + chartHeight;
+
+    const dxOffset = minViewportX / viewportPixelX;
+    const dyOffset = currentLocalMinY / viewportPixelY;
+
+    context.moveTo(
+      this._xAxis[ startIndex ] / viewportPixelX - dxOffset,
+      chartBottomLineY - ( this._yAxis[ startIndex ] / viewportPixelY - dyOffset )
+    );
+
+    for (let i = startIndex + 1; i <= endIndex; i += step) {
+      context.lineTo(
+        this._xAxis[ i ] / viewportPixelX - dxOffset,
+        chartBottomLineY - ( this._yAxis[ i ] / viewportPixelY - dyOffset )
+      );
+    }
+  }
+
+  _prerender () {
+
   }
 }

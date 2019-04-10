@@ -74,15 +74,13 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {Array<number>}
-   * @private
    */
   _viewportPointsIndexes = [ 0, 0 ];
 
   /**
-   * @type {boolean}
-   * @private
+   * @type {number}
    */
-  _useViewportPointsInterval = false;
+  _viewportPointsStep = 1;
 
   /**
    * @type {number}
@@ -252,14 +250,6 @@ export class BaseChart extends EventEmitter {
       this.initializeAxisY();
       this.initializeAxisX();*/
     }
-
-    /*const a = _ => {
-      animationTimeout( 500 ).then(_ => {
-        this.toggleSeries( 'y0' );
-        a();
-      });
-    };
-    a();*/
   }
 
   /**
@@ -603,7 +593,7 @@ export class BaseChart extends EventEmitter {
       // [ startIndex, endIndex ]
       this._viewportPointsIndexes[ 0 ] = startIndex;
       this._viewportPointsIndexes[ 1 ] = endIndex;
-      this._useViewportPointsInterval = true;
+      this._viewportPointsStep = 1;
 
       // all work done here
       return;
@@ -641,6 +631,7 @@ export class BaseChart extends EventEmitter {
 
     step = 2 ** Math.floor( Math.log2( step ) );
 
+
     while (startIndex % step !== 0) {
       startIndex--;
     }
@@ -648,14 +639,12 @@ export class BaseChart extends EventEmitter {
     while (endIndex % step !== 0) {
       endIndex++;
     }
+
     endIndex = Math.min( endIndex, this._xAxis.length - 1 );
 
-    for (let i = startIndex; i <= endIndex; i += step) {
-      viewportIndexes.push( i );
-    }
-
-    this._viewportPointsIndexes = viewportIndexes;
-    this._useViewportPointsInterval = false;
+    this._viewportPointsIndexes[ 0 ] = startIndex;
+    this._viewportPointsIndexes[ 1 ] = endIndex;
+    this._viewportPointsStep = step;
   }
 
   /**

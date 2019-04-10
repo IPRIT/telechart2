@@ -106,7 +106,7 @@ export class NavigatorChart extends BaseChart {
 
     if (this._series[ 0 ].name === 'Joined') {
       const f = _ => {
-        animationTimeout( Math.random() * 2000 + 500 ).then(_ => {
+        animationTimeout( Math.random() * 200 + 500 ).then(_ => {
           const min = Math.random() * .4;
           const max = min + Math.random() * ( 1 - min );
           this.animateNavigationRangeTo( min, max );
@@ -114,7 +114,7 @@ export class NavigatorChart extends BaseChart {
         });
       };
 
-      f();
+      // f();
     }
   }
 
