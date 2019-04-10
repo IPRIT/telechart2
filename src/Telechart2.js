@@ -282,7 +282,13 @@ export class Telechart2 extends EventEmitter {
    */
   nextFrame () {
     const deltaTime = this._clock.getDelta();
-    this._animationSource.update( deltaTime );
+    // this._animationSource.update( deltaTime );
+
+    // update context
+    this.update( deltaTime );
+
+    // render context
+    this.render();
 
     this.global.requestAnimationFrame(_ => this.nextFrame());
   }
