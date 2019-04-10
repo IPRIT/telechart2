@@ -1,0 +1,7 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('main', 'component') {
+  display: block;
+  position: relative;
+}

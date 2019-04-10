@@ -17,7 +17,7 @@ const chartPaddingTop = 15;
 const chartPaddingBottom = 24;
 
 export const ChartVariables = {
-  enableOffscreenCanvas: false,
+  enableOffscreenCanvas: true,
 
   minWidth: 100,
 
@@ -33,5 +33,5 @@ export const ChartVariables = {
   navigationChartUIHeight: 44,
   navigationChartOffsetY: 388,
 
-  initialViewportScale: .25
+  initialViewportScale: .3
 };

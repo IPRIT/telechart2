@@ -6,7 +6,6 @@ import { ChartTypes } from './ChartTypes';
 import { ChartEvents } from './events/ChartEvents';
 
 import {
-  animationTimeout,
   arraysEqual,
   binarySearchIndexes, ChartVariables,
   clampNumber,
@@ -141,6 +140,18 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _localMaxY = 0;
+
+  /**
+   * @type {number}
+   * @private
+   */
+  _globalMinY = 0;
+
+  /**
+   * @type {number}
+   * @private
+   */
+  _globalMaxY = 0;
 
   /**
    * @type {number}
@@ -302,8 +313,6 @@ export class BaseChart extends EventEmitter {
 
       this._axisCursorUpdateNeeded = false;
     }
-
-    const isNavigatorPath = this.isNavigatorChart;
 
     this.eachSeries(line => {
       const hasOpacityAnimation = line.isHiding || line.isShowing;
@@ -606,7 +615,6 @@ export class BaseChart extends EventEmitter {
 
     let groupingDistanceLimitX = boostScale * this._groupingPixels * this._viewportPixelX;
 
-    let viewportIndexes = [];
     let groupStartIndex = startIndex;
 
     let step = 1;
@@ -631,7 +639,6 @@ export class BaseChart extends EventEmitter {
 
     step = 2 ** Math.floor( Math.log2( step ) );
 
-
     while (startIndex % step !== 0) {
       startIndex--;
     }
@@ -653,8 +660,17 @@ export class BaseChart extends EventEmitter {
   updateLocalExtremes () {
     let localMinY = Infinity;
     let localMaxY = 0;
+    let globalMinY = Infinity;
+    let globalMaxY = 0;
 
     this.eachSeries(line => {
+      if (globalMinY > line.globalMinY) {
+        globalMinY = line.globalMinY;
+      }
+      if (globalMaxY < line.globalMaxY) {
+        globalMaxY = line.globalMaxY;
+      }
+
       if (!line.isVisible) {
         // find among visible series
         return;
@@ -673,6 +689,9 @@ export class BaseChart extends EventEmitter {
 
     this._localMinY = localMinY;
     this._localMaxY = localMaxY;
+
+    this._globalMinY = globalMinY;
+    this._globalMaxY = globalMaxY;
 
     let updateAnimation = false;
 
@@ -1003,6 +1022,13 @@ export class BaseChart extends EventEmitter {
   /**
    * @return {number}
    */
+  get globalExtremeDifference () {
+    return this._globalMaxY - this._globalMinY;
+  }
+
+  /**
+   * @return {number}
+   */
   get currentLocalExtremeDifference () {
     return this._currentLocalMaxY - this._currentLocalMinY;
   }
@@ -1019,6 +1045,20 @@ export class BaseChart extends EventEmitter {
    */
   get localMaxY () {
     return this._localMaxY;
+  }
+
+  /**
+   * @return {number}
+   */
+  get globalMinY () {
+    return this._globalMinY;
+  }
+
+  /**
+   * @return {number}
+   */
+  get globalMaxY () {
+    return this._globalMaxY;
   }
 
   /**
@@ -1061,6 +1101,13 @@ export class BaseChart extends EventEmitter {
    */
   get seriesOffsetTop () {
     return ChartVariables.mainChartOffsetTop;
+  }
+
+  /**
+   * @return {number}
+   */
+  get seriesOffsetBottom () {
+    return ChartVariables.mainChartOffsetBottom;
   }
 
   /**

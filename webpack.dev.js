@@ -38,7 +38,7 @@ module.exports = {
         options: {
           inline: true,
           fallback: true,
-          name: 'telechart-2.[hash].js'
+          name: 'telechart2.[hash].js'
         }
       },
       {

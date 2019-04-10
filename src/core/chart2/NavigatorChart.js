@@ -389,6 +389,13 @@ export class NavigatorChart extends BaseChart {
   }
 
   /**
+   * @return {number}
+   */
+  get seriesOffsetBottom () {
+    return 0;
+  }
+
+  /**
    * @return {CanvasRenderingContext2D}
    */
   get seriesContext () {

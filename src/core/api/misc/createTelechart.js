@@ -7,6 +7,7 @@ import { Telechart2 } from '../../../Telechart2';
 export function createTelechart (env) {
   const {
     mainCanvas,
+    axisCanvas,
     navigationSeriesCanvas,
     navigationUICanvas,
     api = null,
@@ -18,6 +19,7 @@ export function createTelechart (env) {
 
   return Telechart2.create({
     mainCanvas,
+    axisCanvas,
     navigationSeriesCanvas,
     navigationUICanvas,
     api

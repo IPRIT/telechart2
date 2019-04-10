@@ -1,5 +1,5 @@
 import { EventEmitter } from '../misc/EventEmitter';
-import { arrayMinMax, clampNumber } from '../../utils';
+import { arrayMinMax } from '../../utils';
 import { Point } from '../point/Point';
 import { Tween, TweenEvents } from '../animation/Tween';
 import { ChartTypes } from '../chart2/ChartTypes';
@@ -148,6 +148,18 @@ export class Series extends EventEmitter {
    * @type {number}
    * @private
    */
+  _globalMaxY = 0;
+
+  /**
+   * @type {number}
+   * @private
+   */
+  _globalMinY = 0;
+
+  /**
+   * @type {number}
+   * @private
+   */
   _opacity = 1;
 
   /**
@@ -181,9 +193,7 @@ export class Series extends EventEmitter {
    */
   initialize () {
     // this._createPoints();
-    if (this.isPrerenderSupported) {
-      this._prerender();
-    }
+    this.updateGlobalExtremes();
   }
 
   /**
@@ -234,7 +244,18 @@ export class Series extends EventEmitter {
   }
 
   drawPath (context) {
-    this.drawPathByInterval( context, this.chart._viewportPointsIndexes, this.chart._viewportPointsStep )
+    if (!this._opacity) {
+      return;
+    }
+
+    const interval = this.chart._viewportPointsIndexes;
+
+    if (!interval.length
+      || interval[ 1 ] - interval[ 0 ] <= 0) {
+      return;
+    }
+
+    this.drawPathByInterval( context, interval, this.chart._viewportPointsStep );
   }
 
   /**
@@ -243,15 +264,6 @@ export class Series extends EventEmitter {
    * @param {number} step
    */
   drawPathByInterval (context, interval, step = 1) {
-    if (!interval.length
-      || interval[ 1 ] - interval[ 0 ] <= 0) {
-      return;
-    }
-
-    if (!this._opacity) {
-      return;
-    }
-
     context.globalAlpha = this._opacity;
     context.strokeStyle = this._color;
     context.lineWidth = this.strokeWidth;
@@ -259,15 +271,9 @@ export class Series extends EventEmitter {
     context.lineCap = 'butt';
     context.beginPath();
 
-    const usePath2D = this.isPrerenderSupported;
-    const path2D = usePath2D ? new Path2D() : null;
-    const ctx = usePath2D ? path2D : context;
+    this._drawPathToContext( context, interval, step );
 
-    this._drawPathToContext( ctx, interval, step );
-
-    usePath2D
-      ? context.stroke( path2D )
-      : context.stroke();
+    context.stroke();
   }
 
   /**
@@ -327,6 +333,18 @@ export class Series extends EventEmitter {
 
     this._localMinY = minValue;
     this._localMaxY = maxValue;
+  }
+
+  /**
+   * @private
+   */
+  updateGlobalExtremes () {
+    const [ minValue, maxValue ] = arrayMinMax(
+      this._yAxis, 0, this._xAxis.length - 1
+    );
+
+    this._globalMinY = minValue;
+    this._globalMaxY = maxValue;
   }
 
   /**
@@ -394,6 +412,20 @@ export class Series extends EventEmitter {
   }
 
   /**
+   * @return {number}
+   */
+  get globalMinY () {
+    return this._globalMinY;
+  }
+
+  /**
+   * @return {number}
+   */
+  get globalMaxY () {
+    return this._globalMaxY;
+  }
+
+  /**
    * @return {string}
    */
   get opacityAnimationType () {
@@ -412,14 +444,6 @@ export class Series extends EventEmitter {
    */
   get isHiding () {
     return this._opacityAnimationType === OpacityAnimationType.hiding;
-  }
-
-  /**
-   * @return {boolean}
-   */
-  get isPrerenderSupported () {
-    return typeof self.Path2D !== 'undefined'
-      && typeof self.DOMMatrix !== 'undefined';
   }
 
   /**
@@ -568,25 +592,26 @@ export class Series extends EventEmitter {
     this._markerAnimation.start();
   }
 
-  _drawPathToContext (context, interval, step = 1) {
-    if (!interval.length
-      || interval[ 1 ] - interval[ 0 ] <= 0) {
-      return;
-    }
-
-    if (!this._opacity) {
-      return;
-    }
+  /**
+   * @param context
+   * @param interval
+   * @param step
+   * @param settings
+   * @private
+   */
+  _drawPathToContext (context, interval, step = 1, settings = {}) {
+    const {
+      viewportRange = this.chart.viewportRange,
+      viewportPixelX = this.chart.viewportPixelX,
+      viewportPixelY = this.chart.viewportPixelY,
+      currentLocalMinY = this.chart.currentLocalMinY
+    } = settings || {};
 
     const [ startIndex, endIndex ] = interval;
-    const [ minViewportX ] = this.chart.viewportRange;
-
-    const viewportPixelX = this.chart.viewportPixelX;
-    const viewportPixelY = this.chart.viewportPixelY;
+    const [ minViewportX ] = viewportRange;
 
     const chartHeight = this.chart.chartHeight;
     const chartOffsetTop = this.chart.seriesOffsetTop;
-    const currentLocalMinY = this.chart.currentLocalMinY;
     const chartBottomLineY = chartOffsetTop + chartHeight;
 
     const dxOffset = minViewportX / viewportPixelX;
@@ -603,9 +628,5 @@ export class Series extends EventEmitter {
         chartBottomLineY - ( this._yAxis[ i ] / viewportPixelY - dyOffset )
       );
     }
-  }
-
-  _prerender () {
-
   }
 }

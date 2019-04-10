@@ -68,16 +68,20 @@ export class TelechartApi extends EventEmitter {
     root.appendChild( header );
 
     const mainCanvas = this.mainCanvas = this._createMainCanvas();
+    const axisCanvas = this.axisCanvas = this._createAxisCanvas();
     const navigationSeriesCanvas = this.navigationSeriesCanvas = this._createNavigationSeriesCanvas();
     const navigationUICanvas = this.navigationUICanvas = this._createNavigationUICanvas();
 
-    root.appendChild( mainCanvas );
+    const mainCanvasRoot = this.mainCanvasRoot = this._createMainCanvasRoot( root );
+    mainCanvasRoot.appendChild( mainCanvas );
+    mainCanvasRoot.appendChild( axisCanvas );
 
     const navigatorRoot = this.navigatorRoot = this._createNavigatorRoot( root );
     navigatorRoot.appendChild( navigationSeriesCanvas );
     navigatorRoot.appendChild( navigationUICanvas );
 
     this._updateMainCanvasDimensions( mainCanvas );
+    this._updateAxisCanvasDimensions( axisCanvas );
     this._updateNavigationSeriesCanvasDimensions( navigationSeriesCanvas );
     this._updateNavigationUICanvasDimensions( navigationUICanvas );
 
@@ -90,6 +94,7 @@ export class TelechartApi extends EventEmitter {
 
     if (this.isOffscreenCanvas) {
       const mainOffscreen = mainCanvas.transferControlToOffscreen();
+      const axisOffscreen = axisCanvas.transferControlToOffscreen();
       const navigationSeriesOffscreen = navigationSeriesCanvas.transferControlToOffscreen();
       const navigationUIOffscreen = navigationUICanvas.transferControlToOffscreen();
 
@@ -100,11 +105,13 @@ export class TelechartApi extends EventEmitter {
       worker.postMessage({
         type: TelechartWorkerEvents.SETUP,
         mainCanvas: mainOffscreen,
+        axisCanvas: axisOffscreen,
         navigationSeriesCanvas: navigationSeriesOffscreen,
         navigationUICanvas: navigationUIOffscreen,
         settings
       }, [
         mainOffscreen,
+        axisOffscreen,
         navigationSeriesOffscreen,
         navigationUIOffscreen
       ]);
@@ -113,6 +120,7 @@ export class TelechartApi extends EventEmitter {
 
       this.telechart = createTelechart({
         mainCanvas,
+        axisCanvas,
         navigationSeriesCanvas,
         navigationUICanvas,
         api: this,
@@ -227,8 +235,10 @@ export class TelechartApi extends EventEmitter {
    */
   _onResize (ev) {
     this._updateMainCanvasDimensions();
+    this._updateAxisCanvasDimensions();
     this._updateNavigationSeriesCanvasDimensions();
     this._updateNavigationUICanvasDimensions();
+
     this._updateEnvironmentOptions();
 
     this.emit( 'resize', ev );
@@ -246,7 +256,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.mainCanvasHeight = ChartVariables.mainMaxHeight;
 
-    const devicePixelRatio = window.devicePixelRatio;
+    const devicePixelRatio = window.devicePixelRatio || 1;
 
     setAttributes(canvas, {
       style: cssText({
@@ -255,6 +265,30 @@ export class TelechartApi extends EventEmitter {
       }),
       width: (devicePixelRatio * this.mainCanvasWidth) | 0,
       height: (devicePixelRatio * this.mainCanvasHeight) | 0
+    });
+  }
+
+  /**
+   * @private
+   */
+  _updateAxisCanvasDimensions (canvas = this.axisCanvas) {
+    const parentNode = canvas.parentNode;
+
+    this.axisCanvasWidth = clampNumber(
+      getElementWidth( parentNode ),
+      ChartVariables.minWidth
+    );
+    this.axisCanvasHeight = ChartVariables.mainMaxHeight;
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    setAttributes(canvas, {
+      style: cssText({
+        width: `${this.axisCanvasWidth}px`,
+        height: `${this.axisCanvasHeight}px`
+      }),
+      width: (devicePixelRatio * this.axisCanvasWidth) | 0,
+      height: (devicePixelRatio * this.axisCanvasHeight) | 0
     });
   }
 
@@ -270,7 +304,7 @@ export class TelechartApi extends EventEmitter {
     ) - 24; // left + right padding
     this.navigationSeriesCanvasHeight = ChartVariables.navigationChartHeight;
 
-    const devicePixelRatio = window.devicePixelRatio;
+    const devicePixelRatio = window.devicePixelRatio || 1;
 
     setAttributes(canvas, {
       style: cssText({
@@ -294,7 +328,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.navigationUICanvasHeight = ChartVariables.navigationChartUIHeight;
 
-    const devicePixelRatio = window.devicePixelRatio;
+    const devicePixelRatio = window.devicePixelRatio || 1;
 
     setAttributes(canvas, {
       style: cssText({
@@ -333,6 +367,10 @@ export class TelechartApi extends EventEmitter {
     const canvasWidth = this.mainCanvasWidth;
     const canvasHeight = this.mainCanvasHeight;
 
+    const axisCanvasOffset = getElementOffset( this.axisCanvas );
+    const axisCanvasWidth = this.axisCanvasWidth;
+    const axisCanvasHeight = this.axisCanvasHeight;
+
     const navigationSeriesCanvasOffset = getElementOffset( this.navigationSeriesCanvas );
     const navigationSeriesCanvasWidth = this.navigationSeriesCanvasWidth;
     const navigationSeriesCanvasHeight = this.navigationSeriesCanvasHeight;
@@ -351,6 +389,11 @@ export class TelechartApi extends EventEmitter {
       canvasOffset,
       canvasWidth,
       canvasHeight,
+
+      // axis canvas
+      axisCanvasOffset,
+      axisCanvasWidth,
+      axisCanvasHeight,
 
       // navigation canvas series
       navigationSeriesCanvasOffset,
@@ -430,6 +473,17 @@ export class TelechartApi extends EventEmitter {
   /**
    * @private
    */
+  _createAxisCanvas () {
+    return createElement('canvas', {
+      attrs: {
+        class: 'telechart2-axis-canvas'
+      }
+    });
+  }
+
+  /**
+   * @private
+   */
   _createNavigationSeriesCanvas () {
     return createElement('canvas', {
       attrs: {
@@ -447,6 +501,22 @@ export class TelechartApi extends EventEmitter {
         class: 'telechart2-navigation-ui-canvas'
       }
     });
+  }
+
+  /**
+   * @return {Element}
+   * @private
+   */
+  _createMainCanvasRoot (container) {
+    const mRoot = createElement('div', {
+      attrs: {
+        class: 'telechart2-main'
+      }
+    });
+
+    container.appendChild( mRoot );
+
+    return mRoot;
   }
 
   /**
