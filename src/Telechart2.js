@@ -296,8 +296,13 @@ export class Telechart2 extends EventEmitter {
   }
 
   render () {
-    this._chart.render();
-    this._navigatorChart.render();
+    if (this._chart) {
+      this._chart.render();
+    }
+
+    if (this._navigatorChart) {
+      this._navigatorChart.render();
+    }
 
     this.forceRedraw = false;
   }
@@ -309,6 +314,8 @@ export class Telechart2 extends EventEmitter {
     this._themeName = themeName;
 
     this.forceRedraw = true;
+
+    this.render();
   }
 
   /**

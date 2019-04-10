@@ -142,9 +142,6 @@ export class LabelButtons extends EventEmitter {
     let longTapped = false;
 
     button.addEventListener('touchstart', ev => {
-      if (ev.cancelable) {
-        ev.preventDefault();
-      }
       longTapped = false;
       longTapTimeout = setTimeout(_ => {
         longTapped = true;
@@ -160,9 +157,15 @@ export class LabelButtons extends EventEmitter {
     };
 
     button.addEventListener('touchend', ev => {
-      if (!longTapped) {
-        this._onButtonClick( button, line )
+      if (longTapped) {
+        if (ev.cancelable) {
+          ev.preventDefault();
+        }
       }
+      /*
+      if (!longTapped) {
+        this._onButtonClick( button, line );
+      }*/
 
       cancelLongTap( ev );
     });

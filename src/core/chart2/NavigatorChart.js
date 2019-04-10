@@ -4,6 +4,7 @@ import { NavigatorChartEvents } from './events/NavigatorChartEvents';
 import { Tween, TweenEvents } from '../animation/Tween';
 
 import {
+  animationTimeout,
   ChartVariables,
   clampNumber, drawRoundedRect
 } from '../../utils';
@@ -26,7 +27,7 @@ export class NavigatorChart extends BaseChart {
    * @type {number}
    * @private
    */
-  _paddingLeftRight = 11;
+  _paddingLeftRight = 12;
 
   /**
    * @type {number}
@@ -44,7 +45,7 @@ export class NavigatorChart extends BaseChart {
    * @type {number}
    * @private
    */
-  _sliderLeftRightBorderWidth = 5;
+  _sliderLeftRightBorderWidth = 9;
 
   /**
    * @type {number}
@@ -59,22 +60,17 @@ export class NavigatorChart extends BaseChart {
   _overlayRightWidth = 0;
 
   /**
-   * @type {string}
-   * @private
-   */
-  _overlayColor = 'rgba(240, 246, 249, 0.75)';
-
-  /**
    * @type {boolean}
    * @private
    */
-  _sliderUpdateNeeded = false;
+  redrawSliderUINeeded = true;
 
   /**
    * @type {Array<number>}
    * @private
    */
   _navigatorRange = [ .8 - ChartVariables.initialViewportScale, .8 ];
+  _navigatorRange = [ 1 - ChartVariables.initialViewportScale, 1 ];
 
   /**
    * @type {Tween}
@@ -101,11 +97,6 @@ export class NavigatorChart extends BaseChart {
   _navigatorChangeDirection = 'right';
 
   /**
-   * @type {boolean}
-   */
-  redrawSliderUINeeded = true;
-
-  /**
    * Initializes navigator chart
    */
   initialize () {
@@ -113,7 +104,18 @@ export class NavigatorChart extends BaseChart {
 
     this._updateNavigatorDimensions();
 
-    // this._createSliderEventsListeners();
+    if (this._series[ 0 ].name === 'Joined') {
+      const f = _ => {
+        animationTimeout( Math.random() * 2000 + 500 ).then(_ => {
+          const min = Math.random() * .4;
+          const max = min + Math.random() * ( 1 - min );
+          this.animateNavigationRangeTo( min, max );
+          f();
+        });
+      };
+
+      f();
+    }
   }
 
   update (deltaTime) {
@@ -127,6 +129,8 @@ export class NavigatorChart extends BaseChart {
         this._navigationRangeAnimationObject.from,
         this._navigationRangeAnimationObject.to
       );
+
+      this.redrawSliderUINeeded = true;
     }
   }
 
@@ -172,7 +176,7 @@ export class NavigatorChart extends BaseChart {
         context,
         this._paddingLeftRight,
         this._overlayPaddingTopBottom,
-        overlayLeftWidth,
+        overlayLeftWidth + this._sliderLeftRightBorderWidth,
         this.navigatorHeight - this._overlayPaddingTopBottom * 2, {
           tl: 8,
           bl: 8
@@ -182,12 +186,15 @@ export class NavigatorChart extends BaseChart {
       context.fill();
     }
 
+    context.globalAlpha = colors.sliderOverlayAlpha;
+    context.fillStyle = colors.sliderOverlay;
+
     if (overlayRightWidth) {
       drawRoundedRect(
         context,
-        this._paddingLeftRight + this.navigatorWidth - overlayRightWidth,
+        this._paddingLeftRight + this.navigatorWidth - overlayRightWidth - this._sliderLeftRightBorderWidth,
         this._overlayPaddingTopBottom,
-        overlayRightWidth,
+        overlayRightWidth + this._sliderLeftRightBorderWidth,
         this.navigatorHeight - this._overlayPaddingTopBottom * 2, {
           tr: 8,
           br: 8
@@ -206,7 +213,79 @@ export class NavigatorChart extends BaseChart {
 
     context.globalAlpha = 1;
     context.fillStyle = colors.sliderBorder;
+    context.strokeStyle = colors.sliderBorder;
 
+    const topBottomPadding = 0;
+
+    // left border
+    drawRoundedRect(
+      context,
+      this._paddingLeftRight + overlayLeftWidth, topBottomPadding,
+      this._sliderLeftRightBorderWidth, this.navigatorHeight - 2 * topBottomPadding, {
+        tl: 6,
+        bl: 6
+      }
+    );
+    context.fill();
+
+    // right border
+    drawRoundedRect(
+      context,
+      this._paddingLeftRight + this.navigatorWidth - overlayRightWidth - this._sliderLeftRightBorderWidth, topBottomPadding,
+      this._sliderLeftRightBorderWidth, this.navigatorHeight - 2 * topBottomPadding, {
+        tr: 6,
+        br: 6
+      }
+    );
+    context.fill();
+
+    context.strokeStyle = colors.sliderBorder;
+    context.lineWidth = 1;
+
+    context.beginPath();
+    context.moveTo(
+      this._paddingLeftRight + overlayLeftWidth + this._sliderLeftRightBorderWidth,
+      topBottomPadding
+    );
+    context.lineTo(
+      this._paddingLeftRight + this.navigatorWidth - overlayRightWidth - this._sliderLeftRightBorderWidth,
+      topBottomPadding
+    );
+    context.stroke();
+
+    context.beginPath();
+    context.moveTo(
+      this._paddingLeftRight + overlayLeftWidth + this._sliderLeftRightBorderWidth,
+      this.navigatorHeight - topBottomPadding
+    );
+    context.lineTo(
+      this._paddingLeftRight + this.navigatorWidth - overlayRightWidth - this._sliderLeftRightBorderWidth,
+      this.navigatorHeight - topBottomPadding
+    );
+    context.stroke();
+
+    // borders pins
+    context.strokeStyle = 'white';
+    context.lineWidth = 2;
+    context.lineCap = 'round';
+    context.lineJoin = 'round';
+
+    const pinHeight = 0.2 * this.navigatorHeight;
+
+    const x1 = this._paddingLeftRight + overlayLeftWidth + this._sliderLeftRightBorderWidth / 2;
+    const y1 = this.navigatorHeight / 2 - pinHeight / 2;
+    const x2 = this._paddingLeftRight + this.navigatorWidth - overlayRightWidth - this._sliderLeftRightBorderWidth / 2;
+    const y2 = this.navigatorHeight / 2 + pinHeight / 2;
+
+    context.beginPath();
+    context.moveTo( x1, y1 );
+    context.lineTo( x1, y2 );
+    context.stroke();
+
+    context.beginPath();
+    context.moveTo( x2, y1 );
+    context.lineTo( x2, y2 );
+    context.stroke();
   }
 
   onResize () {
@@ -266,7 +345,7 @@ export class NavigatorChart extends BaseChart {
     this._navigatorRange = [ min, max ];
 
     this._updateNavigatorDimensions();
-    this._sliderUpdateNeeded = true;
+    this.redrawSliderUINeeded = true;
 
     if (emitChange) {
       this.emit( NavigatorChartEvents.RANGE_CHANGED, this._navigatorRange );
