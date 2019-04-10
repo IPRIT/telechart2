@@ -346,14 +346,7 @@ export class Telechart2 extends EventEmitter {
   }
 
   initializeButtons () {
-    const buttons = this._chart._series.map(line => {
-      return {
-        color: line.color,
-        name: line.name,
-        label: line.label,
-        visible: line.isVisible
-      };
-    });
+    const buttons = this._getLines();
 
     if (isWorker) {
       this.global.postMessage({
@@ -362,6 +355,19 @@ export class Telechart2 extends EventEmitter {
       });
     } else {
       this.dedicatedApi.initializeButtons( buttons );
+    }
+  }
+
+  updateButtons () {
+    const buttons = this._getLines();
+
+    if (isWorker) {
+      this.global.postMessage({
+        type: TelechartWorkerEvents.UPDATE_BUTTONS,
+        buttons
+      });
+    } else {
+      this.dedicatedApi.updateButtons( buttons );
     }
   }
 
@@ -406,12 +412,31 @@ export class Telechart2 extends EventEmitter {
         : this._navigatorChart.setSeriesInvisible( line.label );
     });
 
+    this._chart.on(ChartEvents.FORCE_BUTTONS_UPDATE, _ => {
+      this.updateButtons();
+    });
+
     this._navigatorChart.on(NavigatorChartEvents.RANGE_CHANGED, range => {
       this._chart.setNavigationRange( ...range );
     });
 
     this._navigatorChart.on(NavigatorChartEvents.ANIMATE_RANGE, range => {
       this._chart.animateNavigationRangeTo( ...range );
+    });
+  }
+
+  /**
+   * @return {{visible: boolean, color: string, name: string, label: string}[]}
+   * @private
+   */
+  _getLines () {
+    return this._chart._series.map(line => {
+      return {
+        color: line.color,
+        name: line.name,
+        label: line.label,
+        visible: line.isVisible
+      };
     });
   }
 }

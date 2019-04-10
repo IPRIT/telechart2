@@ -821,38 +821,43 @@ export class BaseChart extends EventEmitter {
 
   toggleAllSeriesExcept (label) {
     const targetLine = this.getSeriesByLabel( label );
+
     if (targetLine && !targetLine.isVisible) {
       // console.log( 'target 0 -> 1, rest 1/0 -> 0' );
-      return this.eachSeries(line => {
-        line.setVisible();
+      this.eachSeries(line => {
+        line.label === label
+          ? line.setVisible()
+          : line.setInvisible();
       });
-    }
+    } else {
+      let isSingleVisible = true;
 
-    let isSingleVisible = true;
+      for (let i = 0; i < this._series.length; ++i) {
+        if (this._series[ i ].isVisible
+          && this._series[ i ].label !== label) {
+          isSingleVisible = false;
+          break;
+        }
+      }
 
-    for (let i = 0; i < this._series.length; ++i) {
-      if (this._series[ i ].isVisible
-        && this._series[ i ].label !== label) {
-        isSingleVisible = false;
-        break;
+      if (isSingleVisible) {
+        // console.log( 'target 1 -> 0, rest 0 -> 1' );
+        this.eachSeries(line => {
+          line.label === label
+            ? line.setInvisible()
+            : line.setVisible();
+        });
+      } else {
+        // console.log( 'target 1 -> 1, rest 1/0 -> 0' );
+        this.eachSeries(line => {
+          if (line.label !== label) {
+            line.setInvisible();
+          }
+        });
       }
     }
 
-    if (isSingleVisible) {
-      // console.log( 'target 1 -> 0, rest 0 -> 1' );
-      this.eachSeries(line => {
-        line.label === label
-          ? line.setInvisible()
-          : line.setVisible();
-      });
-    } else {
-      // console.log( 'target 1 -> 1, rest 1/0 -> 0' );
-      this.eachSeries(line => {
-        if (line.label !== label) {
-          line.setInvisible();
-        }
-      });
-    }
+    this.emit( ChartEvents.FORCE_BUTTONS_UPDATE );
   }
 
   /**

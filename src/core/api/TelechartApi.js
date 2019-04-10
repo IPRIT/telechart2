@@ -172,6 +172,10 @@ export class TelechartApi extends EventEmitter {
     this.labelButtons.initialize( buttons );
   }
 
+  updateButtons (buttons) {
+    this.labelButtons.updateButtons( buttons );
+  }
+
   /**
    * @param label
    * @param longTap
@@ -478,6 +482,11 @@ export class TelechartApi extends EventEmitter {
       eventEmitter.on(TelechartWorkerEvents.INITIALIZE_BUTTONS, ev => {
         const { buttons = [] } = ev.data;
         this.initializeButtons( buttons );
+      });
+
+      eventEmitter.on(TelechartWorkerEvents.UPDATE_BUTTONS, ev => {
+        const { buttons = [] } = ev.data;
+        this.updateButtons( buttons );
       });
     }
   }

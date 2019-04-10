@@ -1,11 +1,16 @@
 import { EventEmitter } from '../misc/EventEmitter';
 import {
   addClass, animationTimeout, createElement,
-  cssText, hasClass,
+  cssText, hasClass, passiveIfSupported,
   removeClass, setAttributes
 } from '../../utils';
 
 let LABEL_BUTTONS_ID = 1;
+
+const buttonClass = 'telechart2-label-button';
+const creatingClass = 'telechart2-label-button_creating';
+const selectedClass = 'telechart2-label-button_selected';
+const shakingClass = 'telechart2-label-button_shaking';
 
 export class LabelButtons extends EventEmitter {
 
@@ -49,11 +54,26 @@ export class LabelButtons extends EventEmitter {
   }
 
   initialize (buttons = []) {
-    this.buttons = buttons;
+    this.lines = buttons;
 
     this._createContainer();
     this._createButtons();
   }
+
+  updateButtons (newLines = []) {
+    const map = Object.create( null );
+    for (let i = 0; i < newLines.length; ++i) {
+      map[ newLines[ i ].label ] = newLines[ i ];
+    }
+
+    for (let i = 0; i < this.lines.length; ++i) {
+      const line = this.lines[ i ];
+      const newLine = map[ line.label ];
+
+      this._setButtonVisibility( line, newLine.visible );
+    }
+  }
+
 
   /**
    * @private
@@ -79,7 +99,7 @@ export class LabelButtons extends EventEmitter {
    * @private
    */
   _createButtons () {
-    this.buttons.forEach((line, index) => {
+    this.lines.forEach((line, index) => {
       this.container.appendChild(
         this._createButton( line, index )
       )
@@ -92,9 +112,6 @@ export class LabelButtons extends EventEmitter {
    * @private
    */
   _createButton (line, index) {
-    const buttonClass = 'telechart2-label-button';
-    const creatingClass = 'telechart2-label-button_creating';
-    const selectedClass = 'telechart2-label-button_selected';
 
     const buttonIcon = this._createSvgIcon( line.color );
 
@@ -107,6 +124,7 @@ export class LabelButtons extends EventEmitter {
     const button = createElement('button', {
       attrs: {
         class: `${buttonClass} ${selectedClass} ${creatingClass}`,
+        id: `telechart2-button-label-${line.label}`,
         style: cssText({
           backgroundColor: line.color,
           transitionDelay: `${index * 10}ms`
@@ -118,44 +136,36 @@ export class LabelButtons extends EventEmitter {
       removeClass( button, creatingClass );
     });
 
-    button.addEventListener('click', _ => {
-      const visible = this.buttons.filter( line => line.visible );
-      const isSingleVisible = visible.length <= 1;
-      const isOwn = visible[ 0 ] && visible[ 0 ].label === line.label;
+    button.addEventListener('click', _ => this._onButtonClick( button, line ));
 
-      if (isSingleVisible && isOwn) {
-        const shakingClass = 'telechart2-label-button_shaking';
-        if (hasClass( button, shakingClass )) {
-          return;
-        }
-        return animationTimeout( 10 ).then(_ => {
-          addClass( button, shakingClass );
-          return animationTimeout( 500 );
-        }).then(_ => {
-          removeClass( button, shakingClass );
-        });
+    let longTapTimeout = null;
+    let longTapped = false;
+
+    button.addEventListener('touchstart', ev => {
+      if (ev.cancelable) {
+        ev.preventDefault();
+      }
+      longTapped = false;
+      longTapTimeout = setTimeout(_ => {
+        longTapped = true;
+        this._onLongTapped( button, line );
+      }, 800);
+    }, passiveIfSupported( false ));
+
+    const cancelLongTap = ev => {
+      if (longTapTimeout) {
+        clearTimeout( longTapTimeout );
+        longTapTimeout = null;
+      }
+    };
+
+    button.addEventListener('touchmove', cancelLongTap, passiveIfSupported( false ));
+    button.addEventListener('touchend', ev => {
+      if (!longTapped) {
+        this._onButtonClick( button, line )
       }
 
-      this.api.toggleSeries( line.label );
-
-      line.visible = !line.visible;
-
-      if (hasClass( button, selectedClass )) {
-        removeClass( button, selectedClass );
-        setAttributes(button, {
-          style: cssText({
-            color: line.color,
-            borderColor: line.color
-          })
-        });
-      } else {
-        addClass( button, selectedClass );
-        setAttributes(button, {
-          style: cssText({
-            backgroundColor: line.color
-          })
-        });
-      }
+      cancelLongTap( ev );
     });
 
     return button;
@@ -196,5 +206,75 @@ export class LabelButtons extends EventEmitter {
         class: 'telechart2-label-button__icon'
       }
     }, [ path ], 'http://www.w3.org/2000/svg');
+  }
+
+  /**
+   * @param button
+   * @param line
+   * @return {Promise<void | never>}
+   * @private
+   */
+  _onButtonClick (button, line) {
+    const visible = this.lines.filter( line => line.visible );
+    const isSingleVisible = visible.length <= 1;
+    const isOwn = visible[ 0 ] && visible[ 0 ].label === line.label;
+
+    if (isSingleVisible && isOwn) {
+      if (hasClass( button, shakingClass )) {
+        return;
+      }
+      return animationTimeout( 10 ).then(_ => {
+        addClass( button, shakingClass );
+        return animationTimeout( 500 );
+      }).then(_ => {
+        removeClass( button, shakingClass );
+      });
+    }
+
+    this.api.toggleSeries( line.label );
+
+    this._setButtonVisibility( line, !hasClass( button, selectedClass ), button );
+  }
+
+  /**
+   * @param button
+   * @param line
+   * @private
+   */
+  _onLongTapped (button, line) {
+    this.api.toggleSeries( line.label, true );
+
+    if (navigator && navigator.vibrate) {
+      navigator.vibrate( 100 );
+    }
+  }
+
+  /**
+   * @param line
+   * @param visibility
+   * @param button
+   * @private
+   */
+  _setButtonVisibility (line, visibility, button = null) {
+    button = button || this.container.querySelector( `#telechart2-button-label-${line.label}` );
+
+    line.visible = visibility;
+
+    if (visibility) {
+      addClass( button, selectedClass );
+      setAttributes(button, {
+        style: cssText({
+          backgroundColor: line.color
+        })
+      });
+    } else {
+      removeClass( button, selectedClass );
+      setAttributes(button, {
+        style: cssText({
+          color: line.color,
+          borderColor: line.color
+        })
+      });
+    }
   }
 }
