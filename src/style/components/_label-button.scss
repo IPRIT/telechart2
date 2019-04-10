@@ -46,7 +46,7 @@
     width: 0;
 
     path {
-      transition: stroke-dashoffset .2s $primary-transition-function;
+      // transition: stroke-dashoffset .2s $primary-transition-function;
       stroke-dasharray: 15;
       stroke-dashoffset: 15;
     }

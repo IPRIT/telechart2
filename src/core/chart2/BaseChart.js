@@ -598,7 +598,7 @@ export class BaseChart extends EventEmitter {
 
     // if we have no enough points
     // then we don't need to approximate
-    if (endIndex - startIndex < 400 && !this.isNavigatorChart) {
+    if (endIndex - startIndex < 100 && !this.isNavigatorChart) {
       // just save indexes of points for increase performance
       // [ startIndex, endIndex ]
       this._viewportPointsIndexes[ 0 ] = startIndex;
@@ -619,6 +619,8 @@ export class BaseChart extends EventEmitter {
     let viewportIndexes = [];
     let groupStartIndex = startIndex;
 
+    let step = 1;
+
     for (let i = startIndex + 1; i <= endIndex; ++i) {
       const pointX = this._xAxis[ i ];
 
@@ -629,19 +631,27 @@ export class BaseChart extends EventEmitter {
           // we have 2 or more points to group
           // [ startIndex, lastIndex ] all indexes inclusive
           const endIndex = i - 1;
-          const middleIndex = ( groupStartIndex + endIndex ) >> 1;
-          viewportIndexes.push( middleIndex );
-        } else {
-          if (startIndex === i - 1) {
-            // add first point
-            viewportIndexes.push( startIndex );
+          if (step === 1) {
+            step = endIndex - groupStartIndex;
+            break;
           }
-
-          viewportIndexes.push( i );
         }
-
-        groupStartIndex = i;
       }
+    }
+
+    step = 2 ** Math.floor( Math.log2( step ) );
+
+    while (startIndex % step !== 0) {
+      startIndex--;
+    }
+
+    while (endIndex % step !== 0) {
+      endIndex++;
+    }
+    endIndex = Math.min( endIndex, this._xAxis.length - 1 );
+
+    for (let i = startIndex; i <= endIndex; i += step) {
+      viewportIndexes.push( i );
     }
 
     this._viewportPointsIndexes = viewportIndexes;

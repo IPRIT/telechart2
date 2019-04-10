@@ -264,30 +264,24 @@ export class Series extends EventEmitter {
     const dxOffset = minViewportX / viewportPixelX;
     const dyOffset = currentLocalMinY / viewportPixelY;
 
-    let x = this._xAxis[ startIndex ];
-    let y = this._yAxis[ startIndex ];
-
     context.globalAlpha = this._opacity;
     context.strokeStyle = this._color;
     context.lineWidth = this.strokeWidth;
-    context.beginPath();
     /*context.lineJoin = 'round';
     context.lineCap = 'round';*/
     context.lineJoin = 'bevel';
     context.lineCap = 'butt';
+    context.beginPath();
 
     context.moveTo(
-      x / viewportPixelX - dxOffset,
-      chartBottomLineY - ( y / viewportPixelY - dyOffset )
+      this._xAxis[ startIndex ] / viewportPixelX - dxOffset,
+      chartBottomLineY - ( this._yAxis[ startIndex ] / viewportPixelY - dyOffset )
     );
 
     for (let i = startIndex + 1; i <= endIndex; ++i) {
-      x = this._xAxis[ i ];
-      y = this._yAxis[ i ];
-
       context.lineTo(
-        x / viewportPixelX - dxOffset,
-        chartBottomLineY - ( y / viewportPixelY - dyOffset )
+        this._xAxis[ i ] / viewportPixelX - dxOffset,
+        chartBottomLineY - ( this._yAxis[ i ] / viewportPixelY - dyOffset )
       );
     }
 
@@ -327,24 +321,24 @@ export class Series extends EventEmitter {
     context.globalAlpha = this._opacity;
     context.strokeStyle = this._color;
     context.lineWidth = this.strokeWidth;
-    context.beginPath();
     /*context.lineJoin = 'round';
     context.lineCap = 'round';*/
     context.lineJoin = 'bevel';
     context.lineCap = 'butt';
+    context.beginPath();
 
     context.moveTo(
-      x / viewportPixelX - dxOffset,
-      chartBottomLineY - ( y / viewportPixelY - dyOffset )
+      this._xAxis[ startIndex ] / viewportPixelX - dxOffset,
+      chartBottomLineY - ( this._yAxis[ startIndex ] / viewportPixelY - dyOffset )
     );
 
+    let curIndex = startIndex;
     for (let i = 1; i < array.length; ++i) {
-      x = this._xAxis[ array[ i ] ];
-      y = this._yAxis[ array[ i ] ];
+      curIndex = array[ i ];
 
       context.lineTo(
-        x / viewportPixelX - dxOffset,
-        chartBottomLineY - ( y / viewportPixelY - dyOffset )
+        this._xAxis[ curIndex ] / viewportPixelX - dxOffset,
+        chartBottomLineY - ( this._yAxis[ curIndex ] / viewportPixelY - dyOffset )
       );
     }
 
