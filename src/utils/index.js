@@ -7,3 +7,4 @@ export * from './events';
 export * from './text';
 export * from './themes';
 export * from './algorithms';
+export * from './canvas';

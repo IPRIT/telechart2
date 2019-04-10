@@ -1,6 +1,6 @@
 import { AnimationSource, AnimationSourceEvents } from './core/animation/AnimationSource';
 import { Clock } from './core/misc/Clock';
-import { ChartThemes } from './utils/themes';
+import { ChartThemes, Colors } from './utils/themes';
 import { Chart } from './core/chart2/Chart';
 import { EventEmitter } from './core/misc/EventEmitter';
 import { NavigatorChart } from './core/chart2/NavigatorChart';
@@ -135,6 +135,11 @@ export class Telechart2 extends EventEmitter {
    * @type {TelechartApi}
    */
   dedicatedApi = null;
+
+  /**
+   * @type {boolean}
+   */
+  forceRedraw = false;
 
   /**
    * @static
@@ -293,6 +298,8 @@ export class Telechart2 extends EventEmitter {
   render () {
     this._chart.render();
     this._navigatorChart.render();
+
+    this.forceRedraw = false;
   }
 
   /**
@@ -300,6 +307,8 @@ export class Telechart2 extends EventEmitter {
    */
   setTheme (themeName) {
     this._themeName = themeName;
+
+    this.forceRedraw = true;
   }
 
   /**
@@ -376,6 +385,13 @@ export class Telechart2 extends EventEmitter {
    */
   get themeName () {
     return this._themeName;
+  }
+
+  /**
+   * @return {*}
+   */
+  get themeColors () {
+    return Colors[ this._themeName ] || Colors.default;
   }
 
   /**

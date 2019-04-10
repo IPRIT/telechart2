@@ -346,7 +346,7 @@ export class BaseChart extends EventEmitter {
   }
 
   render () {
-    if (this.redrawChartNeeded) {
+    if (this.redrawChartNeeded || this.telechart.forceRedraw) {
       this.redrawChart();
 
       this.redrawChartNeeded = false;

@@ -31,9 +31,10 @@ const apis = [];
 const query = parseQueryString( location.search );
 let currentThemeName = query && query.theme || 'default';
 
-const source = sources[ 4 ];
-
-createChart( source, 0 );
+for (let i = 0; i < sources.length; ++i) {
+  const source = sources[ i ];
+  createChart( source, i );
+}
 
 updatePageTheme();
 

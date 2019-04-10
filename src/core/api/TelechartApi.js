@@ -267,7 +267,7 @@ export class TelechartApi extends EventEmitter {
     this.navigationSeriesCanvasWidth = clampNumber(
       getElementWidth( parentNode ),
       ChartVariables.minWidth
-    );
+    ) - 24; // left + right padding
     this.navigationSeriesCanvasHeight = ChartVariables.navigationChartHeight;
 
     const devicePixelRatio = window.devicePixelRatio;

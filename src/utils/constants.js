@@ -31,5 +31,7 @@ export const ChartVariables = {
   // navigation chart
   navigationChartHeight: 40,
   navigationChartUIHeight: 44,
-  navigationChartOffsetY: 388
+  navigationChartOffsetY: 388,
+
+  initialViewportScale: .25
 };

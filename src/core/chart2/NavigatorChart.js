@@ -5,7 +5,7 @@ import { Tween, TweenEvents } from '../animation/Tween';
 
 import {
   ChartVariables,
-  clampNumber
+  clampNumber, drawRoundedRect
 } from '../../utils';
 
 export class NavigatorChart extends BaseChart {
@@ -20,13 +20,19 @@ export class NavigatorChart extends BaseChart {
    * @type {number}
    * @private
    */
-  _paddingTopBottom = 2;
+  _overlayPaddingTopBottom = 1;
 
   /**
    * @type {number}
    * @private
    */
   _paddingLeftRight = 11;
+
+  /**
+   * @type {number}
+   * @private
+   */
+  _viewportPadding = 0;
 
   /**
    * @type {number}
@@ -68,7 +74,7 @@ export class NavigatorChart extends BaseChart {
    * @type {Array<number>}
    * @private
    */
-  _navigatorRange = [ 0, 1 ];
+  _navigatorRange = [ .8 - ChartVariables.initialViewportScale, .8 ];
 
   /**
    * @type {Tween}
@@ -93,6 +99,11 @@ export class NavigatorChart extends BaseChart {
    * @private
    */
   _navigatorChangeDirection = 'right';
+
+  /**
+   * @type {boolean}
+   */
+  redrawSliderUINeeded = true;
 
   /**
    * Initializes navigator chart
@@ -122,7 +133,11 @@ export class NavigatorChart extends BaseChart {
   render () {
     super.render();
 
-    // todo: render slider UI
+    if (this.redrawSliderUINeeded || this.telechart.forceRedraw) {
+      this.redrawSliderUI();
+
+      this.redrawSliderUINeeded = false;
+    }
   }
 
   redrawChart () {
@@ -132,6 +147,73 @@ export class NavigatorChart extends BaseChart {
     this.eachSeries(line => {
       line.render( context );
     });
+  }
+
+  redrawSliderUI () {
+    const context = this.telechart.navigationUIContext;
+
+    context.clearRect( 0, 0, this.chartWidth, this.navigatorHeight );
+
+    this.redrawSliderOverlays( context );
+    this.redrawSlider( context );
+  }
+
+  redrawSliderOverlays (context) {
+    const overlayLeftWidth = this._overlayLeftWidth;
+    const overlayRightWidth = this._overlayRightWidth;
+
+    const colors = this.telechart.themeColors;
+
+    if (overlayLeftWidth) {
+      context.globalAlpha = colors.sliderOverlayAlpha;
+      context.fillStyle = colors.sliderOverlay;
+
+      drawRoundedRect(
+        context,
+        this._paddingLeftRight,
+        this._overlayPaddingTopBottom,
+        overlayLeftWidth,
+        this.navigatorHeight - this._overlayPaddingTopBottom * 2, {
+          tl: 8,
+          bl: 8
+        }
+      );
+
+      context.fill();
+    }
+
+    if (overlayRightWidth) {
+      drawRoundedRect(
+        context,
+        this._paddingLeftRight + this.navigatorWidth - overlayRightWidth,
+        this._overlayPaddingTopBottom,
+        overlayRightWidth,
+        this.navigatorHeight - this._overlayPaddingTopBottom * 2, {
+          tr: 8,
+          br: 8
+        }
+      );
+
+      context.fill();
+    }
+  }
+
+  redrawSlider (context) {
+    const overlayLeftWidth = this._overlayLeftWidth;
+    const overlayRightWidth = this._overlayRightWidth;
+
+    const colors = this.telechart.themeColors;
+
+    context.globalAlpha = 1;
+    context.fillStyle = colors.sliderBorder;
+
+  }
+
+  onResize () {
+    super.onResize();
+
+    this._updateNavigatorDimensions();
+    this.redrawSliderUI();
   }
 
   /**
@@ -190,7 +272,6 @@ export class NavigatorChart extends BaseChart {
       this.emit( NavigatorChartEvents.RANGE_CHANGED, this._navigatorRange );
     }
   }
-
 
   /**
    * @param {number} min

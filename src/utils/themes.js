@@ -23,3 +23,16 @@ export const ChartThemesColors = {
   default: '#ffffff',
   dark: '#242F3E'
 };
+
+export const Colors = {
+  default: {
+    sliderBorder: '#C0D1E1',
+    sliderOverlay: '#E2EEF9',
+    sliderOverlayAlpha: .6
+  },
+  dark: {
+    sliderBorder: '#56626D',
+    sliderOverlay: '#304259',
+    sliderOverlayAlpha: .6
+  }
+};

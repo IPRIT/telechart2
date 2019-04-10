@@ -30,6 +30,7 @@
   user-select: none;
   opacity: 1;
   transform: scale(1);
+  white-space: nowrap;
 
   &:not(:last-of-type) {
     margin-right: 6px;
