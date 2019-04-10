@@ -159,7 +159,6 @@ export class LabelButtons extends EventEmitter {
       }
     };
 
-    button.addEventListener('touchmove', cancelLongTap, passiveIfSupported( false ));
     button.addEventListener('touchend', ev => {
       if (!longTapped) {
         this._onButtonClick( button, line )
@@ -245,7 +244,7 @@ export class LabelButtons extends EventEmitter {
     this.api.toggleSeries( line.label, true );
 
     if (navigator && navigator.vibrate) {
-      navigator.vibrate( 100 );
+      navigator.vibrate([ 17 ]);
     }
   }
 
