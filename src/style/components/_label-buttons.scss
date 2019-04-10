@@ -1,7 +1,7 @@
 @import "../system/index";
 
 @include block('label-buttons', 'component') {
-  padding: 4px 12px 0;
+  padding: 14px 12px 0;
   opacity: 1 !important;
   transition: opacity $primary-transition;
 }

@@ -17,7 +17,7 @@ const chartPaddingTop = 15;
 const chartPaddingBottom = 24;
 
 export const ChartVariables = {
-  enableOffscreenCanvas: false,
+  enableOffscreenCanvas: true,
 
   minWidth: 100,
 

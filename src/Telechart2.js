@@ -6,6 +6,7 @@ import { EventEmitter } from './core/misc/EventEmitter';
 import { NavigatorChart } from './core/chart2/NavigatorChart';
 import { ChartEvents } from './core/chart2/events/ChartEvents';
 import { NavigatorChartEvents } from './core/chart2/events/NavigatorChartEvents';
+import { TelechartWorkerEvents } from './core/worker/worker-events';
 // import { Chart } from './core/chart/Chart';
 // import { NavigatorChart } from './core/chart/NavigatorChart';
 // import { LabelButtons } from './core/chart/LabelButtons';
@@ -17,7 +18,12 @@ import { NavigatorChartEvents } from './core/chart/events/NavigatorChartEvents';
 
 let TELECHART_ID = 1;
 
-const isWorker = typeof self !== 'undefined';
+export let isWorker = false;
+try {
+  isWorker = typeof window === 'undefined';
+} catch (e) {
+  isWorker = true;
+}
 
 export class Telechart2 extends EventEmitter {
 
@@ -73,12 +79,6 @@ export class Telechart2 extends EventEmitter {
   _navigatorChart = null;
 
   /**
-   * @type {LabelButtons}
-   * @private
-   */
-  _labelButtons = null;
-
-  /**
    * @type {string}
    * @private
    */
@@ -132,15 +132,24 @@ export class Telechart2 extends EventEmitter {
   };
 
   /**
+   * @type {TelechartApi}
+   */
+  dedicatedApi = null;
+
+  /**
    * @static
    * @param {HTMLCanvasElement} mainCanvas
    * @param {HTMLCanvasElement} navigationSeriesCanvas
    * @param {HTMLCanvasElement} navigationUICanvas
+   * @param {TelechartApi} api
    * @param {Object} options
    * @param environmentOptions
    */
-  static create ({ mainCanvas, navigationSeriesCanvas, navigationUICanvas }, options = {}, environmentOptions = {}) {
+  static create ({ mainCanvas, navigationSeriesCanvas, navigationUICanvas, api }, options = {}, environmentOptions = {}) {
     const chart = new Telechart2();
+
+    // only in windowed context
+    chart.dedicatedApi = api;
 
     chart.setOptions( options );
 
@@ -245,8 +254,9 @@ export class Telechart2 extends EventEmitter {
     // create components
     this._createChart();
     this._createNavigatorChart();
-    // this._createLabelButtons();
     this._addEventListeners();
+
+    this.initializeButtons();
 
     // create animation loop
     this._clock = new Clock();
@@ -260,8 +270,6 @@ export class Telechart2 extends EventEmitter {
     });
 
     this.nextFrame();
-
-    setInterval(_=> this._chart.toggleAllSeriesExcept(`y${Math.floor( Math.random() * this._chart._series.length )}`), 500);
   }
 
   /**
@@ -280,7 +288,6 @@ export class Telechart2 extends EventEmitter {
   update (deltaTime) {
     this._chart.update( deltaTime );
     this._navigatorChart.update( deltaTime );
-    // this._labelButtons.update( deltaTime );
   }
 
   render () {
@@ -338,6 +345,26 @@ export class Telechart2 extends EventEmitter {
     this.navigationUIContext.scale( this.devicePixelRatio, this.devicePixelRatio );
   }
 
+  initializeButtons () {
+    const buttons = this._chart._series.map(line => {
+      return {
+        color: line.color,
+        name: line.name,
+        label: line.label,
+        visible: line.isVisible
+      };
+    });
+
+    if (isWorker) {
+      this.global.postMessage({
+        type: TelechartWorkerEvents.INITIALIZE_BUTTONS,
+        buttons
+      });
+    } else {
+      this.dedicatedApi.initializeButtons( buttons );
+    }
+  }
+
   /**
    * @return {string}
    */
@@ -372,17 +399,11 @@ export class Telechart2 extends EventEmitter {
   /**
    * @private
    */
-  _createLabelButtons () {
-    this._labelButtons = new LabelButtons( this );
-    this._labelButtons.initialize();
-  }
-
-  /**
-   * @private
-   */
   _addEventListeners () {
     this._chart.on(ChartEvents.SERIES_VISIBLE_CHANGE, line => {
-      this._navigatorChart.toggleSeries( line.label );
+      line.isVisible
+        ? this._navigatorChart.setSeriesVisible( line.label )
+        : this._navigatorChart.setSeriesInvisible( line.label );
     });
 
     this._navigatorChart.on(NavigatorChartEvents.RANGE_CHANGED, range => {

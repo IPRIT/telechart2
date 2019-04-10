@@ -43,3 +43,11 @@ eventBus.on(TelechartWorkerEvents.SET_TITLE, ev => {
 
   telechart.setTitle( title );
 });
+
+eventBus.on(TelechartWorkerEvents.TOGGLE_SERIES, ev => {
+  let { label, longTap = false } = ev.data;
+
+  longTap
+    ? telechart._chart.toggleAllSeriesExcept( label )
+    : telechart._chart.toggleSeries( label );
+});

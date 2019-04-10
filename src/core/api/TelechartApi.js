@@ -11,6 +11,7 @@ import {
   isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported, removeClass,
   resolveElement, setAttributes
 } from '../../utils';
+import { LabelButtons } from '../ui/LabelButtons';
 
 export class TelechartApi extends EventEmitter {
 
@@ -92,7 +93,9 @@ export class TelechartApi extends EventEmitter {
       const navigationSeriesOffscreen = navigationSeriesCanvas.transferControlToOffscreen();
       const navigationUIOffscreen = navigationUICanvas.transferControlToOffscreen();
 
-      const worker = new TelechartWorker();
+      const worker = this.worker = new TelechartWorker();
+
+      this._createLabelButtons();
 
       worker.postMessage({
         type: TelechartWorkerEvents.SETUP,
@@ -105,15 +108,17 @@ export class TelechartApi extends EventEmitter {
         navigationSeriesOffscreen,
         navigationUIOffscreen
       ]);
-
-      this.worker = worker;
     } else {
+      this._createLabelButtons();
+
       this.telechart = createTelechart({
         mainCanvas,
         navigationSeriesCanvas,
         navigationUICanvas,
+        api: this,
         settings
       });
+
       console.log( this.telechart );
     }
 
@@ -161,6 +166,28 @@ export class TelechartApi extends EventEmitter {
     }
 
     this.titleElement.innerHTML = title;
+  }
+
+  initializeButtons (buttons) {
+    this.labelButtons.initialize( buttons );
+  }
+
+  /**
+   * @param label
+   * @param longTap
+   */
+  toggleSeries (label, longTap = false) {
+    if (this.isOffscreenCanvas) {
+      this.worker.postMessage({
+        type: TelechartWorkerEvents.TOGGLE_SERIES,
+        label,
+        longTap
+      });
+    } else {
+      longTap
+        ? this.telechart._chart.toggleAllSeriesExcept( label )
+        : this.telechart._chart.toggleSeries( label );
+    }
   }
 
   addEventListeners () {
@@ -432,5 +459,26 @@ export class TelechartApi extends EventEmitter {
     container.appendChild( nRoot );
 
     return nRoot;
+  }
+
+  /**
+   * @private
+   */
+  _createLabelButtons () {
+    this.labelButtons = new LabelButtons( this, this.rootElement );
+
+    if (this.worker) {
+      const eventEmitter = new EventEmitter();
+
+      this.worker.addEventListener('message', ev => {
+        const type = ev.data.type;
+        eventEmitter.emit( type, ev );
+      });
+
+      eventEmitter.on(TelechartWorkerEvents.INITIALIZE_BUTTONS, ev => {
+        const { buttons = [] } = ev.data;
+        this.initializeButtons( buttons );
+      });
+    }
   }
 }

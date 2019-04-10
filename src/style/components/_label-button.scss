@@ -1,75 +1,62 @@
 @import "../system/index";
 
+@keyframes shaking {
+  10%, 90% {
+    transform: translate3d(-1px, 0, 0);
+  }
+
+  20%, 80% {
+    transform: translate3d(2px, 0, 0);
+  }
+
+  30%, 50%, 70% {
+    transform: translate3d(-4px, 0, 0);
+  }
+
+  40%, 60% {
+    transform: translate3d(4px, 0, 0);
+  }
+}
+
 @include block('label-button', 'component') {
-  padding: 5px 15px 5px 6px;
-  box-shadow: 0 0 0 1px $border-color;
-  border: none;
+  padding: 4px 19.5px;
+  border: 2px solid transparent;
   background-color: transparent;
   outline: none;
   border-radius: 40px;
-  color: $border-color;
+  color: white;
+  transition: transform $primary-transition;
+  will-change: transform;
+  user-select: none;
 
   &:not(:last-of-type) {
-    margin-right: 16px;
-    margin-bottom: 16px;
+    margin-right: 6px;
+    margin-bottom: 7px;
   }
 
   @media screen and (min-width: $tablet-width) {
     cursor: pointer;
   }
 
-  @include modifier('selected') {
-    @include modifies-element('icon') {
-      path {
-        stroke-dashoffset: 15;
-      }
-    }
-
-    @include modifies-element('icon-mask') {
-      r: 10 !important;
-    }
-  }
-
-  @include modifier('animating') {
-    @include modifies-element('icon') {
-      path {
-        transition: stroke-dashoffset .2s $primary-transition-function .25s !important;
-      }
-    }
-
-    @include modifies-element('icon-mask') {
-      transition: fill $primary-transition, r $primary-transition !important;
-    }
-  }
-
   @include element('icon') {
     border-radius: 30px;
     display: inline-block;
     vertical-align: middle;
+    transform: scale( 1.1 );
+    width: 0;
 
     path {
       transition: stroke-dashoffset .2s $primary-transition-function;
       stroke-dasharray: 15;
-      stroke-dashoffset: 0;
-    }
-  }
-
-  @include element('icon-mask') {
-    r: 0 !important;
-    stroke-width: 0.5 !important;
-    fill: white;
-    transition: fill $primary-transition, r $primary-transition .25s;
-
-    @include dark-theme {
-      fill: $dark-color !important;
+      stroke-dashoffset: 15;
     }
   }
 
   @include element('text') {
     display: inline-block;
     vertical-align: middle;
-    margin-left: 9px;
-    transition: color $primary-transition;
+    margin-left: 1px;
+    // transition: color $primary-transition;
 
     @include default-theme {
       color: black;
@@ -78,5 +65,22 @@
     @include dark-theme {
       color: white;
     }
+  }
+
+  @include modifier('selected') {
+    padding: 4px 12px 4px 5px;
+
+    @include modifies-element('icon') {
+      width: 22px;
+
+      path {
+        stroke-dashoffset: 0 !important;
+      }
+    }
+  }
+
+  @include modifier('shaking') {
+    animation-name: shaking;
+    animation-duration: 500ms;
   }
 }

@@ -9,6 +9,7 @@ export function createTelechart (env) {
     mainCanvas,
     navigationSeriesCanvas,
     navigationUICanvas,
+    api = null,
     settings: {
       options,
       environmentOptions
@@ -18,6 +19,7 @@ export function createTelechart (env) {
   return Telechart2.create({
     mainCanvas,
     navigationSeriesCanvas,
-    navigationUICanvas
+    navigationUICanvas,
+    api
   }, options, environmentOptions );
 }

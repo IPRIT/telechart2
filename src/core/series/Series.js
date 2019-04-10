@@ -246,6 +246,10 @@ export class Series extends EventEmitter {
       return;
     }
 
+    if (!this._opacity) {
+      return;
+    }
+
     const [ startIndex, endIndex ] = interval;
     const [ minViewportX ] = this.chart.viewportRange;
 
@@ -296,6 +300,10 @@ export class Series extends EventEmitter {
    */
   drawPathByArray (context, array) {
     if (array.length <= 1) {
+      return;
+    }
+
+    if (!this._opacity) {
       return;
     }
 
