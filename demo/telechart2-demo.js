@@ -26,6 +26,8 @@ const sources = [
   sourceData5
 ];
 
+const titles = [ 'Followers', 'Interactions', 'Messages', 'Views', 'Apps' ];
+
 const apis = [];
 
 const query = parseQueryString( location.search );
@@ -136,7 +138,7 @@ function createChart (sourceData, index) {
 
   const api = new TelechartApi();
   api.createChart(container, {
-    title: 'Followers',
+    title: titles[ index ],
     series: sourceData,
     seriesOptions: {
       grouping: {

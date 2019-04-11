@@ -1,4 +1,19 @@
 /**
+ * Number.prototype.format(n, x, s, c)
+ *
+ * @param {number} n - length of decimal
+ * @param {number} x - length of whole part
+ * @param {string} s - sections delimiter
+ * @param {string} c - decimal delimiter
+ */
+Number.prototype.format = function(n = 0, x = 3, s = ' ', c = '.') {
+  const re = '\\d(?=(\\d{' + (x || 3) + '})+' + (n > 0 ? '\\D' : '$') + ')';
+  const num = this.toFixed(Math.max(0, ~~n));
+
+  return (c ? num.replace('.', c) : num).replace(new RegExp(re, 'g'), '$&' + (s || ' '));
+};
+
+/**
  * @param {string} text
  * @return {string}
  */

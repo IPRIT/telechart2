@@ -2,9 +2,9 @@ import { EventEmitter } from '../misc/EventEmitter';
 import {
   addClass, animationTimeout,
   createElement,
-  cssText,
+  cssText, ensureNumber,
   getElementHeight,
-  getElementWidth, isTransformSupported,
+  getElementWidth, isTouchEventsSupported, isTransformSupported,
   removeClass,
   setAttributes
 } from '../../utils';
@@ -83,6 +83,13 @@ export class DataLabel extends EventEmitter {
    */
   hasVisibleData = false;
 
+  /**
+   * @type {boolean}
+   */
+  hasPercentage = false;
+
+  hasArrow = true;
+
   constructor (root) {
     super();
 
@@ -155,8 +162,6 @@ export class DataLabel extends EventEmitter {
       return;
     }
 
-    console.log( 'update dimensions' );
-
     this.width = getElementWidth( this.container );
     this.height = getElementHeight( this.container );
     this.rootWidth = getElementWidth( this.root );
@@ -188,6 +193,14 @@ export class DataLabel extends EventEmitter {
     }
   }
 
+  togglePercentage (state) {
+    this.hasPercentage = state;
+  }
+
+  toggleArrow (state) {
+    this.hasArrow = state;
+  }
+
   /**
    * @private
    */
@@ -217,19 +230,41 @@ export class DataLabel extends EventEmitter {
    * @private
    */
   _createContent () {
+    // header
+    const headerElements = [];
+
     this.dateElement = createElement('div', {
       attrs: {
         class: 'telechart2-chart-label__date'
       }
     });
 
+    headerElements.push( this.dateElement );
+
+    if (this.hasArrow) {
+      let icon = createElement('div', {
+        attrs: {
+          class: 'telechart2-chart-label__header-arrow'
+        }
+      });
+
+      headerElements.push( icon );
+    }
+
+    const dateWrapper = createElement('div', {
+      attrs: {
+        class: 'telechart2-chart-label__header'
+      }
+    }, headerElements);
+
+    // table
     this.tableElement = createElement('div', {
       attrs: {
         class: 'telechart2-chart-label__table'
       }
     }, this._generateTable());
 
-    this.container.appendChild( this.dateElement );
+    this.container.appendChild( dateWrapper );
     this.container.appendChild( this.tableElement );
   }
 
@@ -253,11 +288,17 @@ export class DataLabel extends EventEmitter {
    * @private
    */
   _createTableItem (dataItem) {
-    const value = createElement('div', {
-      attrs: {
-        class: 'telechart2-chart-label__table-item-value'
-      }
-    }, String( this._toPrecise( dataItem.y ) ));
+    let titleElements = [];
+
+    if (this.hasPercentage) {
+      const percentage = createElement('div', {
+        attrs: {
+          class: 'telechart2-chart-label__table-item-percentage'
+        }
+      }, dataItem.percentage || 0);
+
+      titleElements.push( percentage );
+    }
 
     const title = createElement('div', {
       attrs: {
@@ -265,16 +306,32 @@ export class DataLabel extends EventEmitter {
       }
     }, dataItem.name);
 
+    titleElements.push( title );
+
+    const titleWrapper = createElement('div', {
+      attrs: {
+        class: 'telechart2-chart-label__table-item-title-wrapper'
+      }
+    }, titleElements);
+
+    const value = createElement('div', {
+      attrs: {
+        class: 'telechart2-chart-label__table-item-value',
+        style: cssText({
+          color: dataItem.color
+        })
+      }
+    }, String( this._formatNumber( dataItem.y ) ));
+
     return createElement('div', {
       attrs: {
         class: 'telechart2-chart-label__table-item',
         id: this._getTableItemId( dataItem.label ),
         style: cssText({
-          color: dataItem.color,
-          display: dataItem.visible ? 'block' : 'none'
+          display: dataItem.visible ? 'flex' : 'none'
         })
       }
-    }, [ value, title ]);
+    }, [ titleWrapper, value ]);
   }
 
   /**
@@ -319,29 +376,44 @@ export class DataLabel extends EventEmitter {
       this.tableElement.appendChild( element );
     }
 
-    const titleElement = element.querySelector( '.telechart2-chart-label__table-item-title' );
+    const percentageElement = element.querySelector( '.telechart2-chart-label__table-item-percentage' );
+    // const titleElement = element.querySelector( '.telechart2-chart-label__table-item-title' );
     const valueElement = element.querySelector( '.telechart2-chart-label__table-item-value' );
 
     // update styles
     setAttributes(element, {
       style: cssText({
-        color: dataItem.color,
-        display: dataItem.visible ? 'block' : 'none'
+        display: dataItem.visible ? 'flex' : 'none'
       })
     });
 
-    titleElement.innerHTML = dataItem.name;
-    valueElement.innerHTML = String( this._toPrecise( dataItem.y ) );
+    setAttributes(valueElement, {
+      style: cssText({
+        color: dataItem.color
+      })
+    });
+
+    // titleElement.innerHTML = dataItem.name;
+    valueElement.innerHTML = String( this._formatNumber( dataItem.y ) );
+
+    if (percentageElement) {
+      setAttributes(percentageElement, {
+        style: cssText({
+          display: this.hasPercentage ? 'flex' : 'none'
+        })
+      });
+
+      percentageElement.innerHTML = `${dataItem.percentage || 0}%`;
+    }
   }
 
   /**
-   * @param {number} value
-   * @param {number} precise
-   * @return {number}
+   * @param value
+   * @return {*}
    * @private
    */
-  _toPrecise (value, precise = 2) {
-    return 1 * value.toFixed( precise );
+  _formatNumber (value) {
+    return ensureNumber( value ).format();
   }
 
   /**
@@ -354,10 +426,12 @@ export class DataLabel extends EventEmitter {
     const chartWidth = this.rootWidth;
     const labelWidth = this.width;
 
+    const isTouchSupported = isTouchEventsSupported();
+
     const { left: cursorLeft } = this._getCursorOffset();
 
     const labelPadding = 8;
-    const cursorPadding = 10;
+    const cursorPadding = isTouchSupported ? 10 : -10;
 
     const currentDirection = this.containerDirection;
     const isLeft = currentDirection === 'left';

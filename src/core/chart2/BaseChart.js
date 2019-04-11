@@ -838,6 +838,8 @@ export class BaseChart extends EventEmitter {
     const series = this.getSeriesByLabel( label );
     if (series) {
       series.toggleVisible();
+
+      this._setInsideChartState( false, true );
     }
   }
 
@@ -880,6 +882,8 @@ export class BaseChart extends EventEmitter {
     }
 
     this.emit( ChartEvents.FORCE_BUTTONS_UPDATE );
+
+    this._setInsideChartState( false, true );
   }
 
   /**
@@ -1307,11 +1311,6 @@ export class BaseChart extends EventEmitter {
   _onTouchStart (ev) {
     const targetTouch = ev.targetTouches[ 0 ];
 
-    this._touchStartPosition = {
-      pageX: targetTouch.pageX,
-      pageY: targetTouch.pageY
-    };
-
     this._onCursorMove( targetTouch );
   }
 
@@ -1323,24 +1322,6 @@ export class BaseChart extends EventEmitter {
     const targetTouch = ev.targetTouches[ 0 ];
 
     this._onCursorMove( targetTouch );
-
-    if (this._isScrollingAction === null) {
-      const {
-        pageX: startPageX,
-        pageY: startPageY
-      } = this._touchStartPosition;
-
-      const deltaY = Math.abs( startPageY - targetTouch.pageY );
-      const deltaX = Math.abs( startPageX - targetTouch.pageX );
-
-      this._isScrollingAction = deltaY >= deltaX;
-    }
-
-    if (this._cursorInsideChart
-      && !this._isScrollingAction
-      && ev.cancelable) {
-      ev.preventDefault();
-    }
   }
 
   /**
@@ -1348,12 +1329,6 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _onTouchEnd (ev) {
-    if (this._cursorInsideChart
-      && ev.cancelable) {
-      ev.preventDefault();
-    }
-
-    this._isScrollingAction = null;
     this._onCursorLeave();
   }
 
@@ -1441,11 +1416,12 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @param {boolean} isInside
+   * @param {boolean} immediate
    * @private
    */
-  _setInsideChartState (isInside) {
+  _setInsideChartState (isInside, immediate = false) {
     const changed = this._cursorInsideChart !== isInside;
-    if (!changed) {
+    if (!changed && !immediate) {
       return;
     }
 
@@ -1460,7 +1436,7 @@ export class BaseChart extends EventEmitter {
       this._onCursorInsideChartChanged( isInside );
     };
 
-    if (!isInside) {
+    if (!isInside && !immediate) {
       // create short delay for cursor & markers hiding
       this._markerHideTimeout = setTimeout( change, 2000 );
     } else {

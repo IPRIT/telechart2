@@ -69,6 +69,8 @@ export class TelechartApi extends EventEmitter {
   createChart (mountTo, options) {
     const container = resolveElement( mountTo );
 
+    this.hasPercentage = options.series.percentage || false;
+
     const root = this.rootElement = this._createRoot( container );
     const header = this.headerElement = this._createHeader( root );
 
@@ -113,7 +115,6 @@ export class TelechartApi extends EventEmitter {
 
       const worker = this.worker = new TelechartWorker();
 
-      this.initializeDataLabel();
       this._createLabelButtons();
 
       worker.postMessage({
@@ -130,7 +131,6 @@ export class TelechartApi extends EventEmitter {
         navigationUIOffscreen
       ]);
     } else {
-      this.initializeDataLabel();
       this._createLabelButtons();
 
       this.telechart = createTelechart({
@@ -146,6 +146,7 @@ export class TelechartApi extends EventEmitter {
     }
 
     this.setTitle( options.title );
+    this.initializeDataLabel();
   }
 
   initialize () {
@@ -226,6 +227,7 @@ export class TelechartApi extends EventEmitter {
 
   initializeDataLabel () {
     const dataLabel = new DataLabel( this.rootElement );
+    dataLabel.togglePercentage( this.hasPercentage );
     dataLabel.initialize();
 
     if (this.worker) {
@@ -646,10 +648,10 @@ export class TelechartApi extends EventEmitter {
 
     this.mainCanvasRoot.addEventListener('touchstart', ev => {
       this._onMainCanvasTouchStart( ev );
-    });
+    }, passiveIfSupported( false ));
     this.mainCanvasRoot.addEventListener('touchmove', ev => {
       this._onMainCanvasTouchMove( ev );
-    });
+    }, passiveIfSupported( false ));
     this.mainCanvasRoot.addEventListener('touchend', ev => {
       this._onMainCanvasTouchEnd( ev );
     });
@@ -664,14 +666,46 @@ export class TelechartApi extends EventEmitter {
   }
 
   _onMainCanvasTouchStart (ev) {
-    this._sendEventThrottled( 'touchstart', ev, passiveIfSupported( false ) );
+    const targetTouch = ev.targetTouches[ 0 ];
+
+    this._touchStartPosition = {
+      pageX: targetTouch.pageX,
+      pageY: targetTouch.pageY
+    };
+
+    this._sendEventThrottled( 'touchstart', ev );
   }
 
   _onMainCanvasTouchMove (ev) {
-    this._sendEventThrottled( 'touchmove', ev, passiveIfSupported( false ) );
+    if (this._isScrollingAction === null) {
+      const targetTouch = ev.targetTouches[ 0 ];
+
+      const {
+        pageX: startPageX,
+        pageY: startPageY
+      } = this._touchStartPosition;
+
+      const deltaY = Math.abs( startPageY - targetTouch.pageY );
+      const deltaX = Math.abs( startPageX - targetTouch.pageX );
+
+      this._isScrollingAction = deltaY >= deltaX;
+    }
+
+    if (!this._isScrollingAction
+      && ev.cancelable) {
+      ev.preventDefault();
+    }
+
+    this._sendEventThrottled( 'touchmove', ev );
   }
 
   _onMainCanvasTouchEnd (ev) {
+    this._isScrollingAction = null;
+
+    if (ev.cancelable) {
+      ev.preventDefault();
+    }
+
     this._sendEventThrottled( 'touchend', ev );
   }
 
@@ -681,6 +715,7 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _sendEvent (eventName, ev) {
+    console.log( eventName );
     if (this.isOffscreenCanvas) {
       const transferableEvent = this._transferableEvent( ev );
 

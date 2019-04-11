@@ -14,7 +14,8 @@
   pointer-events: none;
   user-select: none;
   opacity: 0;
-  min-width: 150px;
+  min-width: 140px;
+  max-width: 170px;
 
   @include default-theme {
     background-color: #fff;
@@ -26,35 +27,75 @@
     box-shadow: none;
   }
 
+  @media screen and (min-width: $tablet-width) {
+    cursor: pointer;
+  }
+
   @include modifier('visible') {
     opacity: 1;
+    pointer-events: auto !important;
+  }
+
+  @include element('header') {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+  }
+
+  @include element('header-arrow') {
+    $defaultArrow: 'data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIyNCIgaGVpZ2h0PSIyNCIgdmlld0JveD0iMCAwIDI0IDI0Ij48cGF0aCBmaWxsPSIjRDJENUQ3IiBkPSJNOS4yOSAxNS44OEwxMy4xNyAxMiA5LjI5IDguMTJjLS4zOS0uMzktLjM5LTEuMDIgMC0xLjQxLjM5LS4zOSAxLjAyLS4zOSAxLjQxIDBsNC41OSA0LjU5Yy4zOS4zOS4zOSAxLjAyIDAgMS40MUwxMC43IDE3LjNjLS4zOS4zOS0xLjAyLjM5LTEuNDEgMC0uMzgtLjM5LS4zOS0xLjAzIDAtMS40MnoiLz48L3N2Zz4=';
+
+    width: 20px;
+    height: 20px;
+    background: url(#{$defaultArrow}) no-repeat center center;
+    background-size: 100%;
+    position: relative;
+    right: -4px;
   }
 
   @include element('date') {
-    font-size: 14px;
-    font-weight: 500;
+    font-size: 13px;
+    font-weight: bold;
   }
 
   @include element('table') {
     overflow: hidden;
     margin-top: 4px;
-    max-width: 170px;
-    margin-left: -16px;
   }
 
   @include element('table-item') {
-    float: left;
-    padding-left: 16px;
-    padding-top: 4px;
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    justify-content: space-between;
+    margin-top: 4px;
+    font-size: 13px;
+
+    &:first-of-type {
+      margin-top: 0px;
+    }
   }
 
-  @include element('table-item-value') {
-    font-size: 16px;
+  @include element('table-item-title-wrapper') {
+    display: flex;
+    flex-direction: row;
+  }
+
+  @include element('table-item-percentage') {
+    width: 24px;
+    text-align: right;
     font-weight: bold;
   }
 
   @include element('table-item-title') {
-    font-size: 12px;
-    margin-left: 1px;
+  }
+
+  @include element('table-item-value') {
+    font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    padding-left: 4px;
   }
 }
