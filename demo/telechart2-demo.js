@@ -89,18 +89,16 @@ function updateChartsTheme () {
 }
 
 function updatePageTheme () {
-  animationTimeout().then(_ => {
-    removeClass( document.body, [ 'default-theme', 'dark-theme' ] );
-    addClass( document.body, `${currentThemeName}-theme` );
+  removeClass( document.body, [ 'default-theme', 'dark-theme' ] );
+  addClass( document.body, `${currentThemeName}-theme` );
 
-    if (isBrowserSafari()) {
-      addClass( document.body, 'browser-safari' );
-    }
+  if (isBrowserSafari()) {
+    addClass( document.body, 'browser-safari' );
+  }
 
-    animationTimeout( 300 ).then(_ => {
-      updatePageThemeColor();
-    });
-  })
+  animationTimeout( 300 ).then(_ => {
+    updatePageThemeColor();
+  });
 }
 
 function updatePageThemeColor () {
