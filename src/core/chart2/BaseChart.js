@@ -4,6 +4,8 @@ import { Series } from '../series/Series';
 import { Tween, TweenEvents } from '../animation/Tween';
 import { ChartTypes } from './ChartTypes';
 import { ChartEvents } from './events/ChartEvents';
+import { ChartAxisY } from './axis/ChartAxisY';
+import { ChartAxisX } from './axis/ChartAxisX';
 
 import {
   arraysEqual,
@@ -237,6 +239,12 @@ export class BaseChart extends EventEmitter {
   redrawChartNeeded = true;
 
   /**
+   * @type {boolean}
+   * @private
+   */
+  isYScaled = false;
+
+  /**
    * @param {Telechart2} context
    * @param {Object} options
    */
@@ -256,10 +264,10 @@ export class BaseChart extends EventEmitter {
 
     if (this.isChart) {
       /*this.initializeAxisCursor();
-      this.initializeLabel();
+      this.initializeLabel();*/
 
       this.initializeAxisY();
-      this.initializeAxisX();*/
+      this.initializeAxisX();
     }
   }
 
@@ -268,6 +276,7 @@ export class BaseChart extends EventEmitter {
    */
   update (deltaTime) {
     let redrawChart = false;
+    let redrawAxis = false;
 
     const minMaxYAnimation = this._minMaxYAnimation;
     const extremesUpdated = minMaxYAnimation && minMaxYAnimation.isRunning;
@@ -275,6 +284,7 @@ export class BaseChart extends EventEmitter {
     if (extremesUpdated) {
       this._minMaxYAnimation.update( deltaTime );
       redrawChart = true;
+      redrawAxis = true;
     }
 
     const hasRangeAnimation = this._rangeAnimation && this._rangeAnimation.isRunning;
@@ -294,6 +304,7 @@ export class BaseChart extends EventEmitter {
 
       this._viewportRangeUpdateNeeded = false;
       redrawChart = true;
+      redrawAxis = true;
     }
 
     if (this._viewportPointsGroupingNeeded) {
@@ -309,7 +320,9 @@ export class BaseChart extends EventEmitter {
     // cursor updating
     if (this._axisCursorUpdateNeeded && this.isChart) {
       // this._updateAxisCursor();
-      redrawChart = true;
+      // redrawChart = true;
+
+      redrawAxis = true;
 
       this._axisCursorUpdateNeeded = false;
     }
@@ -326,18 +339,22 @@ export class BaseChart extends EventEmitter {
     });
 
     if (this._label) {
-      this._label.update( deltaTime );
+      // this._label.update( deltaTime );
     }
 
     if (this._yAxisView) {
-      if (extremesUpdated) {
-        this._yAxisView.requestUpdatePosition();
+      if (redrawAxis) {
+        this._yAxisView.requestRedraw();
       }
 
       this._yAxisView.update( deltaTime );
     }
 
     if (this._xAxisView) {
+      if (redrawAxis) {
+        this._xAxisView.requestRedraw();
+      }
+
       this._xAxisView.update( deltaTime );
     }
 
@@ -349,6 +366,14 @@ export class BaseChart extends EventEmitter {
       this.redrawChart();
 
       this.redrawChartNeeded = false;
+    }
+
+    if (this._yAxisView) {
+      this._yAxisView.render();
+    }
+
+    if (this._xAxisView) {
+      this._xAxisView.render();
     }
   }
 
@@ -383,6 +408,10 @@ export class BaseChart extends EventEmitter {
       percentage = false,
       stacked = false
     } = data;
+
+    this.isYScaled = y_scaled;
+    this.isPercentage = percentage;
+    this.isStacked = stacked;
 
     const xAxisIndex = columns.findIndex(column => {
       return types[ column[ 0 ] ] === SeriesTypes.x;
@@ -437,9 +466,7 @@ export class BaseChart extends EventEmitter {
    * Creates y axis
    */
   initializeAxisY () {
-    const yAxisView = new ChartAxisY( this._renderer );
-
-    yAxisView.setChart( this );
+    const yAxisView = new ChartAxisY( this, this.isYScaled );
     yAxisView.initialize();
 
     this._yAxisView = yAxisView;
@@ -449,9 +476,7 @@ export class BaseChart extends EventEmitter {
    * Creates y axis
    */
   initializeAxisX () {
-    const xAxisView = new ChartAxisX( this._renderer );
-
-    xAxisView.setChart( this );
+    const xAxisView = new ChartAxisX( this );
     xAxisView.initialize();
 
     this._xAxisView = xAxisView;
@@ -560,7 +585,7 @@ export class BaseChart extends EventEmitter {
     this._axisCursorUpdateNeeded = true;
 
     if (this._xAxisView) {
-      this._xAxisView.requestUpdatePosition();
+      this._xAxisView.requestUpdateAnimations();
     }
   }
 
@@ -725,6 +750,15 @@ export class BaseChart extends EventEmitter {
    */
   computeViewportPixelX (minX = this._viewportRange[ 0 ], maxX = this._viewportRange[ 1 ]) {
     return ( maxX - minX ) / this.chartWidth;
+  }
+
+  /**
+   * @param minY
+   * @param maxY
+   * @return {number}
+   */
+  computeViewportPixelY (minY = this._currentLocalMinY, maxY = this._currentLocalMaxY) {
+    return ( maxY - minY ) / this.chartHeight;
   }
 
   /**

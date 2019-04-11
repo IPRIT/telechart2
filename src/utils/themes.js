@@ -28,11 +28,23 @@ export const Colors = {
   default: {
     sliderBorder: '#C0D1E1',
     sliderOverlay: '#E2EEF9',
-    sliderOverlayAlpha: .6
+    sliderOverlayAlpha: .6,
+
+    // axis
+    axisTextColor: '#8E8E93',
+    axisTextColorAlpha: 1,
+    axisColor: '#182D3B',
+    axisColorAlpha: .1
   },
   dark: {
     sliderBorder: '#56626D',
     sliderOverlay: '#304259',
-    sliderOverlayAlpha: .6
+    sliderOverlayAlpha: .6,
+
+    // axis
+    axisTextColor: '#A3B1C2',
+    axisTextColorAlpha: .6,
+    axisColor: '#FFFFFF',
+    axisColorAlpha: .1
   }
 };

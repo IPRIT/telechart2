@@ -53,3 +53,11 @@ export function parseQueryString (href) {
     return Object.assign(result, obj);
   })
 }
+
+/**
+ * @param {number} number
+ * @return {string}
+ */
+export function zeroFill (number) {
+  return number < 10 ? '0' + number : number;
+}

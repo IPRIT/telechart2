@@ -1,4 +1,3 @@
-import { AnimationSource, AnimationSourceEvents } from './core/animation/AnimationSource';
 import { Clock } from './core/misc/Clock';
 import { ChartThemes, Colors } from './utils/themes';
 import { Chart } from './core/chart2/Chart';
@@ -101,12 +100,6 @@ export class Telechart2 extends EventEmitter {
    * @private
    */
   _clock = null;
-
-  /**
-   * @type {AnimationSource}
-   * @private
-   */
-  _animationSource = null;
 
   /**
    * @type {number}
@@ -297,14 +290,6 @@ export class Telechart2 extends EventEmitter {
 
     // create animation loop
     this._clock = new Clock();
-    /*this._animationSource = new AnimationSource( 60, 1 ); // fps, timeScale
-    this._animationSource.on(AnimationSourceEvents.UPDATE, deltaTime => {
-      // recalculate context
-      this.update( deltaTime );
-
-      // render context
-      this.render();
-    });*/
 
     this.nextFrame();
   }
