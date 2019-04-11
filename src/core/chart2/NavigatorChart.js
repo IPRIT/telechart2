@@ -104,7 +104,8 @@ export class NavigatorChart extends BaseChart {
 
     this._updateNavigatorDimensions();
 
-    if (this._series[ 0 ].name === 'Joined') {
+
+    if (Math.random() > .7) {
       const f = _ => {
         animationTimeout( Math.random() * 200 + 500 ).then(_ => {
           const min = Math.random() * .4;
@@ -114,7 +115,7 @@ export class NavigatorChart extends BaseChart {
         });
       };
 
-      // f();
+      f();
     }
   }
 

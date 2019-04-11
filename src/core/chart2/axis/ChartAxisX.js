@@ -54,7 +54,7 @@ export class ChartAxisX extends ChartAxis {
   computeAxisValues () {
     const chart = this.chart;
     const chartWidth = chart.chartWidth;
-    const minLabelWidth = 70;
+    const minLabelWidth = 60;
     const pixelX = this.chart.viewportPixelX;
     const viewportMinX = chart.viewportRange[ 0 ];
     const viewportMaxX = chart.viewportRange[ 1 ];
