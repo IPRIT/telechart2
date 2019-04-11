@@ -369,6 +369,7 @@ export class BaseChart extends EventEmitter {
     }
 
     if (this._yAxisView) {
+      // clear rect inside
       this._yAxisView.render();
     }
 
@@ -633,7 +634,7 @@ export class BaseChart extends EventEmitter {
       return;
     }
 
-    const boostLimit = 500;
+    const boostLimit = 300;
     const boostScale = 1 + this._xAxis.length > boostLimit
       ? Math.max(0, ( endIndex - startIndex ) / this._xAxis.length ) * 2
       : 1;

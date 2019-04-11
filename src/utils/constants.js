@@ -14,7 +14,7 @@ export const TimeRanges = {
 };
 
 const chartPaddingTop = 15;
-const chartPaddingBottom = 24;
+const chartPaddingBottom = 32;
 
 export const ChartVariables = {
   enableOffscreenCanvas: true,
@@ -33,5 +33,5 @@ export const ChartVariables = {
   navigationChartUIHeight: 44,
   navigationChartOffsetY: 388,
 
-  initialViewportScale: .95
+  initialViewportScale: .3
 };

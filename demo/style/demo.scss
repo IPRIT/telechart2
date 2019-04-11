@@ -25,6 +25,10 @@ body {
         &__switcher {
           width: 47px;
 
+          @media screen and (max-height: 600px) {
+            width: 38px;
+          }
+
           span {
             &:first-of-type {
               transform: translate(0, 0) scale(1);
@@ -55,6 +59,10 @@ body {
       .text-switcher {
         &__switcher {
           width: 35px;
+
+          @media screen and (max-height: 600px) {
+            width: 28px;
+          }
 
           span {
             &:first-of-type {
@@ -102,6 +110,18 @@ body {
     cursor: default;
     width: 100%;
     padding: 24px 16px 28px;
+    bottom: 0;
+    border-radius: 0;
+    left: 0;
+    text-align: center;
+    transform: translate(0, 0);
+  }
+
+  @media screen and (max-height: 600px) {
+    cursor: default;
+    width: 100%;
+    padding: 12px 16px 16px !important;
+    font-size: 16px;
     bottom: 0;
     border-radius: 0;
     left: 0;

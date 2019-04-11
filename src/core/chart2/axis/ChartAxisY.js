@@ -14,11 +14,6 @@ export class ChartAxisY extends ChartAxis {
   isDoubleAxis = false;
 
   /**
-   * @type {number}
-   */
-  fontSize = 12;
-
-  /**
    * @param {BaseChart | Chart} chart
    * @param {boolean} isDoubleAxis
    */
@@ -31,7 +26,7 @@ export class ChartAxisY extends ChartAxis {
   redraw () {
     const context = this.chart.telechart.axisContext;
 
-    context.clearRect( 0, 0, this.chart.chartWidth, this.chart.chartHeight + this.chart.seriesOffsetTop + this.chart.seriesOffsetBottom );
+    context.clearRect( 0, 0, this.chart.chartWidth, this.chart.chartHeight + this.chart.seriesOffsetTop + 1 );
 
     this.drawLeft( context, true );
   }
@@ -103,7 +98,7 @@ export class ChartAxisY extends ChartAxis {
    */
   initializeWrapper (value) {
     return {
-      value,
+      value, //: this._roundValue( value ),
       formattedValue: this._formatNumber( value ),
       opacity: 0,
       animation: null,
@@ -162,6 +157,15 @@ export class ChartAxisY extends ChartAxis {
    */
   _computeValuePosition (value) {
     return this.chart.projectYToCanvas( value );
+  }
+
+  /**
+   * @param value
+   * @return {number}
+   * @private
+   */
+  _roundValue (value) {
+    return ~~( value + .5 );
   }
 
   /**

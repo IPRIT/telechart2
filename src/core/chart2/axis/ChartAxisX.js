@@ -20,7 +20,35 @@ export class ChartAxisX extends ChartAxis {
   interval = null;
 
   redraw () {
-    // console.log( 'X draw', this.axesValues );
+    const context = this.chart.telechart.axisContext;
+
+    const y = this.chart.chartHeight + this.chart.seriesOffsetTop + 1;
+
+    context.clearRect( 0, y, this.chart.chartWidth, this.chart.seriesOffsetBottom );
+
+    this.draw( context );
+  }
+
+  draw (context) {
+    const textColor = this.textColor;
+    const textColorAlpha = this.textColorAlpha;
+
+    const fontSize = this.fontSize;
+
+    // values
+    context.font = `${fontSize}px Arial`;
+    context.fillStyle = textColor;
+    context.textAlign = "center";
+
+    const y = this.chart.chartHeight + this.chart.seriesOffsetTop + this.fontSize + 4;
+
+    for (let i = 0; i < this.elements.length; ++i) {
+      const element = this.elements[ i ];
+      const x = this._computeValuePosition( this.axesValuesMapping[ element.value ] );
+
+      context.globalAlpha = textColorAlpha * element.opacity;
+      context.fillText(element.formattedValue, x, y);
+    }
   }
 
   computeAxisValues () {
@@ -89,8 +117,13 @@ export class ChartAxisX extends ChartAxis {
    * @return {{animation: Tween, state: number, opacity: number, value: *}}
    */
   initializeWrapper (value, initial = false) {
+    let formattedValue = this._toDateString( value );
+    const parts = formattedValue.split( ' ' );
+    formattedValue = [ parts[0], parts[1] ].join( ' ' );
+
     return {
       value,
+      formattedValue,
       opacity: 0,
       animation: null,
       state: AxisElementState.showing
@@ -117,7 +150,7 @@ export class ChartAxisX extends ChartAxis {
    * @private
    */
   _computeValuePosition (value) {
-    return this.chart.projectXToCanvas( value ) - this.labelWidth * .5;
+    return this.chart.projectXToCanvas( value );
   }
 
   /**

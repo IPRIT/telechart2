@@ -43,6 +43,11 @@ export class ChartAxis extends EventEmitter {
   redrawNeeded = true;
 
   /**
+   * @type {number}
+   */
+  fontSize = 12;
+
+  /**
    * @param {BaseChart | Chart} chart
    */
   constructor (chart) {
