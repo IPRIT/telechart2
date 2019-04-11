@@ -97,7 +97,13 @@ export class TelechartApi extends EventEmitter {
       environmentOptions: this._getEnvironmentOptions()
     };
 
-    this.isOffscreenCanvas = this.enableOffscreenCanvas && isOffscreenCanvasSupported();
+    const hasForceOffscreenState = typeof window.t2_foc !== 'undefined';
+    const forceOffscreenState = hasForceOffscreenState ? t2_foc : null;
+    this.isOffscreenCanvas = (
+      forceOffscreenState !== null
+        ? forceOffscreenState 
+        : this.enableOffscreenCanvas
+    ) && isOffscreenCanvasSupported();
 
     if (this.isOffscreenCanvas) {
       const mainOffscreen = mainCanvas.transferControlToOffscreen();
