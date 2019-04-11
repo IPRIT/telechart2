@@ -636,7 +636,7 @@ export class BaseChart extends EventEmitter {
 
     const boostLimit = 300;
     const boostScale = 1 + this._xAxis.length > boostLimit
-      ? Math.max(0, ( endIndex - startIndex ) / this._xAxis.length ) * 2
+      ? Math.max(0, ( endIndex - startIndex ) / this._xAxis.length )
       : 1;
 
     let groupingDistanceLimitX = boostScale * this._groupingPixels * this._viewportPixelX;
