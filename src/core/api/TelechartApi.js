@@ -715,7 +715,6 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _sendEvent (eventName, ev) {
-    console.log( eventName );
     if (this.isOffscreenCanvas) {
       const transferableEvent = this._transferableEvent( ev );
 
