@@ -415,6 +415,10 @@ export class Telechart2 extends EventEmitter {
     }
   }
 
+  mainCanvasEvent (eventName, event) {
+    this._chart.emitEvent( eventName, event );
+  }
+
   /**
    * @return {string}
    */
@@ -435,6 +439,13 @@ export class Telechart2 extends EventEmitter {
   get global () {
     return isWorker
       ? self : window;
+  }
+
+  /**
+   * @return {boolean}
+   */
+  get isWorker () {
+    return isWorker;
   }
 
   /**

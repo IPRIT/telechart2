@@ -115,7 +115,7 @@ export class NavigatorChart extends BaseChart {
         });
       };
 
-      f();
+      // f();
     }
   }
 

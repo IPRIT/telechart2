@@ -2,16 +2,18 @@ import TelechartWorker from '../worker/telechart.worker';
 import { TelechartWorkerEvents } from '../worker/worker-events';
 import { EventEmitter } from '../misc/EventEmitter';
 import { createTelechart } from './misc/createTelechart';
+import { LabelButtons } from '../ui/LabelButtons';
+import { DataLabel } from '../ui/DataLabel';
+
 import {
   addClass,
   ChartThemes,
   ChartVariables, clampNumber,
   createElement, cssText, getElementOffset,
   getElementWidth, interpolateThemeClass,
-  isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported, removeClass,
-  resolveElement, setAttributes
+  isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported, passiveIfSupported, removeClass,
+  resolveElement, setAttributes, throttle
 } from '../../utils';
-import { LabelButtons } from '../ui/LabelButtons';
 
 export class TelechartApi extends EventEmitter {
 
@@ -54,6 +56,11 @@ export class TelechartApi extends EventEmitter {
    * @type {Telechart2}
    */
   telechart = null;
+
+  /**
+   * @type {DataLabel}
+   */
+  dataLabel = null;
 
   /**
    * @param {string | Element} mountTo
@@ -100,6 +107,7 @@ export class TelechartApi extends EventEmitter {
 
       const worker = this.worker = new TelechartWorker();
 
+      this.initializeDataLabel();
       this._createLabelButtons();
 
       worker.postMessage({
@@ -116,6 +124,7 @@ export class TelechartApi extends EventEmitter {
         navigationUIOffscreen
       ]);
     } else {
+      this.initializeDataLabel();
       this._createLabelButtons();
 
       this.telechart = createTelechart({
@@ -135,6 +144,8 @@ export class TelechartApi extends EventEmitter {
 
   initialize () {
     this.addEventListeners();
+
+    this._sendEventThrottled = throttle( this._sendEvent.bind( this ), 16 );
   }
 
   /**
@@ -204,6 +215,64 @@ export class TelechartApi extends EventEmitter {
 
   addEventListeners () {
     this._attachResizeListener();
+    this._attachMainListeners();
+  }
+
+  initializeDataLabel () {
+    const dataLabel = new DataLabel( this.rootElement );
+    dataLabel.initialize();
+
+    if (this.worker) {
+      const eventEmitter = new EventEmitter();
+
+      this.worker.addEventListener('message', ev => {
+        const type = ev.data.type;
+        eventEmitter.emit( type, ev );
+      });
+
+      eventEmitter.on(TelechartWorkerEvents.UPDATE_DATA_LABEL, ev => {
+        const data = ev.data.data;
+        this.updateDataLabel( data );
+      });
+
+      eventEmitter.on(TelechartWorkerEvents.SET_DATA_LABEL_VISIBILITY, ev => {
+        const visibility = ev.data.visibility;
+        this.setDataLabelVisibility( visibility );
+      });
+    }
+
+    this.dataLabel = dataLabel;
+  }
+
+  /**
+   * @param visibility
+   */
+  setDataLabelVisibility (visibility) {
+    visibility
+      ? this.dataLabel.showLabel()
+      : this.dataLabel.hideLabel();
+  }
+
+  /**
+   * @param changed
+   * @param lines
+   * @param viewportRange
+   */
+  updateDataLabel ({ changed = true, lines = [], viewportRange = [] } = {}) {
+    this.dataLabel.setData( lines );
+
+    const date1 = new Date( viewportRange[ 0 ] );
+    const date2 = new Date( viewportRange[ 1 ] );
+    if (date1.getFullYear() !== date2.getFullYear()) {
+      this.dataLabel.showYear();
+    } else {
+      this.dataLabel.hideYear();
+    }
+
+    if (changed) {
+      this.dataLabel.updateContentRequested = true;
+      this.dataLabel.updatePositionRequested = true;
+    }
   }
 
   /**
@@ -214,7 +283,7 @@ export class TelechartApi extends EventEmitter {
       this._detachResizeListener();
     }
 
-    this._resizeListener = this._onResize.bind( this );
+    this._resizeListener = throttle( this._onResize.bind( this ), 17 );
     window.addEventListener( 'resize', this._resizeListener );
   }
 
@@ -559,5 +628,84 @@ export class TelechartApi extends EventEmitter {
         this.updateButtons( buttons );
       });
     }
+  }
+
+  _attachMainListeners () {
+    this.mainCanvasRoot.addEventListener('mousemove', ev => {
+      this._onMainCanvasMouseMove( ev );
+    });
+    this.mainCanvasRoot.addEventListener('mouseleave', ev => {
+      this._onMainCanvasMouseLeave( ev );
+    });
+
+    this.mainCanvasRoot.addEventListener('touchstart', ev => {
+      this._onMainCanvasTouchStart( ev );
+    });
+    this.mainCanvasRoot.addEventListener('touchmove', ev => {
+      this._onMainCanvasTouchMove( ev );
+    });
+    this.mainCanvasRoot.addEventListener('touchend', ev => {
+      this._onMainCanvasTouchEnd( ev );
+    });
+  }
+
+  _onMainCanvasMouseMove (ev) {
+    this._sendEventThrottled( 'mousemove', ev );
+  }
+
+  _onMainCanvasMouseLeave (ev) {
+    this._sendEventThrottled( 'mouseleave', ev );
+  }
+
+  _onMainCanvasTouchStart (ev) {
+    this._sendEventThrottled( 'touchstart', ev, passiveIfSupported( false ) );
+  }
+
+  _onMainCanvasTouchMove (ev) {
+    this._sendEventThrottled( 'touchmove', ev, passiveIfSupported( false ) );
+  }
+
+  _onMainCanvasTouchEnd (ev) {
+    this._sendEventThrottled( 'touchend', ev );
+  }
+
+  /**
+   * @param eventName
+   * @param ev
+   * @private
+   */
+  _sendEvent (eventName, ev) {
+    if (this.isOffscreenCanvas) {
+      const transferableEvent = this._transferableEvent( ev );
+
+      this.worker.postMessage({
+        type: TelechartWorkerEvents.MAIN_CANVAS_EVENT,
+        eventName,
+        event: transferableEvent
+      });
+    } else {
+      this.telechart.mainCanvasEvent( eventName, ev );
+    }
+  }
+
+  /**
+   * @param ev
+   * @return {{pageY: number, pageX: number}}
+   * @private
+   */
+  _transferableEvent (ev) {
+    const isTouchEvent = !!ev.targetTouches && ev.targetTouches.length;
+    const touch = isTouchEvent
+      ? ev.targetTouches[ 0 ]
+      : ev;
+
+    const result = {
+      pageX: touch.pageX,
+      pageY: touch.pageY
+    };
+
+    return isTouchEvent ? {
+      targetTouches: [ result ]
+    } : result;
   }
 }

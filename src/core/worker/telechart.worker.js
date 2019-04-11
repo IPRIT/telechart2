@@ -51,3 +51,9 @@ eventBus.on(TelechartWorkerEvents.TOGGLE_SERIES, ev => {
     ? telechart._chart.toggleAllSeriesExcept( label )
     : telechart._chart.toggleSeries( label );
 });
+
+eventBus.on(TelechartWorkerEvents.MAIN_CANVAS_EVENT, ev => {
+  let { eventName, event } = ev.data;
+
+  telechart.mainCanvasEvent( eventName, event );
+});

@@ -12,8 +12,9 @@ import {
   binarySearchIndexes, ChartVariables,
   clampNumber,
   ensureNumber,
-  isDate,
+  isDate, throttle,
 } from '../../utils';
+import { TelechartWorkerEvents } from '../worker/worker-events';
 
 let CHART_ID = 1;
 
@@ -216,12 +217,6 @@ export class BaseChart extends EventEmitter {
   _axisCursorUpdateNeeded = false;
 
   /**
-   * @type {Label}
-   * @private
-   */
-  _label = null;
-
-  /**
    * @type {ChartAxisY}
    * @private
    */
@@ -338,10 +333,6 @@ export class BaseChart extends EventEmitter {
       line.update( deltaTime );
     });
 
-    if (this._label) {
-      // this._label.update( deltaTime );
-    }
-
     if (this._yAxisView) {
       if (redrawAxis) {
         this._yAxisView.requestRedraw();
@@ -449,18 +440,6 @@ export class BaseChart extends EventEmitter {
   initializeAxisCursor () {
     this._createAxisCursor();
     this._addAxisCursorEvents();
-  }
-
-  /**
-   * Creates label
-   */
-  initializeLabel () {
-    const label = new Label( this._renderer );
-
-    label.setChart( this );
-    label.initialize();
-
-    this._label = label;
   }
 
   /**
@@ -968,6 +947,27 @@ export class BaseChart extends EventEmitter {
     return this.viewportRange[ 0 ] + chartLeft * this.viewportPixelX;
   }
 
+  emitEvent (eventName, event) {
+    switch (eventName) {
+      case 'mousemove':
+        this._onMouseMove( event );
+        break;
+      case 'mouseleave':
+        this._onMouseLeave( event );
+        break;
+
+      case 'touchstart':
+        this._onTouchStart( event );
+        break;
+      case 'touchmove':
+        this._onTouchMove( event );
+        break;
+      case 'touchend':
+        this._onTouchEnd( event );
+        break;
+    }
+  }
+
   /**
    * @param {number} x
    * @return {number}
@@ -1285,25 +1285,6 @@ export class BaseChart extends EventEmitter {
   }
 
   /**
-   * @private
-   */
-  _addAxisCursorEvents () {
-    /* const mouseMoveListener = this._onMouseMove.bind( this );
-    const mouseLeaveListener = this._onMouseLeave.bind( this );
-
-    const touchStartListener = this._onTouchStart.bind( this );
-    const touchMoveListener = this._onTouchMove.bind( this );
-    const touchEndListener = this._onTouchEnd.bind( this );
-
-    this.renderer.svgContainer.addEventListener( 'touchstart', touchStartListener, { passive: false } );
-    this.renderer.svgContainer.addEventListener( 'touchmove', touchMoveListener, { passive: false } );
-    this.renderer.svgContainer.addEventListener( 'touchend', touchEndListener );
-
-    this.renderer.svgContainer.addEventListener( 'mousemove', mouseMoveListener );
-    this.renderer.svgContainer.addEventListener( 'mouseleave', mouseLeaveListener );*/
-  }
-
-  /**
    * @param {MouseEvent} ev
    * @private
    */
@@ -1356,7 +1337,8 @@ export class BaseChart extends EventEmitter {
     }
 
     if (this._cursorInsideChart
-      && !this._isScrollingAction) {
+      && !this._isScrollingAction
+      && ev.cancelable) {
       ev.preventDefault();
     }
   }
@@ -1366,7 +1348,8 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _onTouchEnd (ev) {
-    if (this._cursorInsideChart && ev.cancelable) {
+    if (this._cursorInsideChart
+      && ev.cancelable) {
       ev.preventDefault();
     }
 
@@ -1402,24 +1385,21 @@ export class BaseChart extends EventEmitter {
     this._updateLabel( this._axisCursorPointIndex !== oldIndex );
   }
 
-  /**
-   * @private
-   */
   _updateLabel (changed = true) {
-    this._label.setData(
-      this._prepareLabelData()
-    );
+    const lines = this._prepareLabelData();
+    const viewportRange = this._viewportRange;
 
-    const date1 = new Date( this._viewportRange[ 0 ] );
-    const date2 = new Date( this._viewportRange[ 1 ] );
-    if (date1.getFullYear() !== date2.getFullYear()) {
-      this._label.showYear();
+    const data = {
+      changed, lines, viewportRange
+    };
+
+    if (this.telechart.isWorker) {
+      this.telechart.global.postMessage({
+        type: TelechartWorkerEvents.UPDATE_DATA_LABEL,
+        data
+      });
     } else {
-      this._label.hideYear();
-    }
-
-    if (changed) {
-      this._label.requestUpdatePosition();
+      this.telechart.dedicatedApi.updateDataLabel( data );
     }
   }
 
@@ -1482,7 +1462,7 @@ export class BaseChart extends EventEmitter {
 
     if (!isInside) {
       // create short delay for cursor & markers hiding
-      this._markerHideTimeout = setTimeout( change , 1000 );
+      this._markerHideTimeout = setTimeout( change, 2000 );
     } else {
       change();
     }
@@ -1496,11 +1476,26 @@ export class BaseChart extends EventEmitter {
     if (isInside) {
       this._showMarkers();
       // this._showCursor();
-      this._label.showLabel();
     } else {
       this._hideMarkers();
       // this._hideCursor();
-      this._label.hideLabel();
+    }
+
+    this._toggleDataLabelVisibility( isInside );
+  }
+
+  /**
+   * @param visibility
+   * @private
+   */
+  _toggleDataLabelVisibility (visibility) {
+    if (this.telechart.isWorker) {
+      this.telechart.global.postMessage({
+        type: TelechartWorkerEvents.SET_DATA_LABEL_VISIBILITY,
+        visibility
+      });
+    } else {
+      this.telechart.dedicatedApi.setDataLabelVisibility( visibility );
     }
   }
 
@@ -1531,12 +1526,7 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _insideChart ({ pageX, pageY }) {
-    const { top, left } = this.telechart.canvasOffset;
-    const chartTop = pageY - top - ChartVariables.mainChartOffsetTop;
-    const chartLeft = pageX - left;
-
-    return chartTop >= 0 && chartTop <= this.chartHeight
-      && chartLeft >= 0 && chartLeft <= this.chartWidth;
+    return true;
   }
 
   /**
@@ -1557,8 +1547,8 @@ export class BaseChart extends EventEmitter {
         visible: line.isVisible,
         x,
         y: line._yAxis[ index ],
-        svgY: this.projectYToCanvas( line._yAxis[ index ] ),
-        svgX: this.projectXToCanvas( line._xAxis[ index ] )
+        canvasY: this.projectYToCanvas( line._yAxis[ index ] ),
+        canvasX: this.projectXToCanvas( line._xAxis[ index ] )
       });
     });
 

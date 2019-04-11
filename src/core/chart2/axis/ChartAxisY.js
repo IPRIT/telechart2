@@ -184,7 +184,7 @@ export class ChartAxisY extends ChartAxis {
           ? (symbol = 'K', v / 1.0e+3)
           : v;
 
-    return Number( compressedValue.toFixed( symbol ? 1 : 0 ) ) + symbol;
+    return 1 * ( compressedValue.toFixed( symbol ? 1 : 0 ) ) + symbol;
   }
 }
 

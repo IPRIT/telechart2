@@ -8,25 +8,22 @@
   z-index: 1;
   padding: 8px 10px;
   background-color: #fff;
-  border-radius: 4px;
+  border-radius: 8px;
   box-shadow: 0 0 2px -1px rgba(0, 0, 0, 0.43), 0 1px 3px 0px rgba(0, 0, 0, 0.13);
-  transition: background-color $primary-transition,
-    color $primary-transition,
-    opacity $primary-transition,
-    // transform .05s $primary-transition-function,
-    left .05s $primary-transition-function,
-    top .1s $primary-transition-function;
+  transition: opacity $primary-transition;
   pointer-events: none;
   user-select: none;
   opacity: 0;
+  min-width: 150px;
 
   @include default-theme {
     background-color: #fff;
   }
 
   @include dark-theme {
-    background-color: $dark-color;
+    background-color: #1c2533;
     color: white;
+    box-shadow: none;
   }
 
   @include modifier('visible') {

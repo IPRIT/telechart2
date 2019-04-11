@@ -64,3 +64,36 @@ export function isObject (value) {
 export function isDate (value) {
   return value instanceof Date && !isNaN( value.valueOf() );
 }
+
+/**
+ * @param {Function} fn
+ * @param {number} delayMs
+ * @return {wrapper}
+ */
+export function throttle (fn, delayMs) {
+  let isThrottled = false,
+    savedArgs,
+    savedThis;
+
+  function wrapper () {
+    if (isThrottled) {
+      savedArgs = arguments;
+      savedThis = this;
+      return;
+    }
+
+    fn.apply(this, arguments);
+
+    isThrottled = true;
+
+    setTimeout(_ => {
+      isThrottled = false;
+      if (savedArgs) {
+        wrapper.apply(savedThis, savedArgs);
+        savedArgs = savedThis = null;
+      }
+    }, delayMs);
+  }
+
+  return wrapper;
+}
