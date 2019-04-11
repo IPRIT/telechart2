@@ -14,6 +14,11 @@ export class ChartAxisY extends ChartAxis {
   isDoubleAxis = false;
 
   /**
+   * @type {number}
+   */
+  fontSize = 12;
+
+  /**
    * @param {BaseChart | Chart} chart
    * @param {boolean} isDoubleAxis
    */
@@ -37,9 +42,7 @@ export class ChartAxisY extends ChartAxis {
     const axesColor = this.axesColor;
     const axesColorAlpha = this.axesColorAlpha;
 
-    const fontSize = 12;
-
-    const offsetY = 2;
+    const fontSize = this.fontSize;
 
     // values
     context.font = `${fontSize}px Arial`;
@@ -74,7 +77,7 @@ export class ChartAxisY extends ChartAxis {
     const chart = this.chart;
     const viewportPixelY = this.chart.computeViewportPixelY( chart.localMinY, chart.localMaxY );
     const viewportMinY = chart.localMinY;
-    const viewportMaxY = chart.localMaxY - (this.chart.seriesOffsetTop + 6) * viewportPixelY;
+    const viewportMaxY = chart.localMaxY - (this.chart.seriesOffsetTop + this.fontSize) * viewportPixelY;
     const distance = viewportMaxY - viewportMinY;
 
     if (!distance) {
@@ -82,8 +85,6 @@ export class ChartAxisY extends ChartAxis {
     }
 
     let deltaY = distance / 5;
-    // let divider = Math.pow(10, Math.max(0, ( distance | 0 ).toString().length - 2) );
-    // deltaY = Math.floor( deltaY / divider ) * divider;
 
     let currentValue = viewportMinY;
     let result = [ currentValue ];
@@ -92,20 +93,6 @@ export class ChartAxisY extends ChartAxis {
       result.unshift( currentValue + deltaY );
       currentValue += deltaY;
     }
-
-    /*while (currentValue + deltaY <= viewportMaxY) {
-      result.unshift( currentValue + deltaY );
-      currentValue += deltaY;
-    }
-
-    const maxLength = 6;
-    if (result.length < maxLength) {
-      currentValue = viewportMinY;
-      while (currentValue - deltaY >= viewportMinY) {
-        result.push( currentValue - deltaY );
-        currentValue -= deltaY;
-      }
-    }*/
 
     return result;
   }
