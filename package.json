@@ -1,5 +1,5 @@
 {
-  "name": "telechart",
+  "name": "telechart2",
   "version": "1.0.0",
   "description": "⚡ Fast & efficient line chart for Telegram",
   "main": "index.js",
@@ -12,7 +12,7 @@
   },
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/IPRIT/telechart.git"
+    "url": "git+https://github.com/IPRIT/telechart2.git"
   },
   "keywords": [
     "javascript",
@@ -27,9 +27,9 @@
   "author": "Alexander Belov",
   "license": "MIT",
   "bugs": {
-    "url": "https://github.com/IPRIT/telechart/issues"
+    "url": "https://github.com/IPRIT/telechart2/issues"
   },
-  "homepage": "https://iprit.github.io/telechart/",
+  "homepage": "https://iprit.github.io/telechart2/",
   "devDependencies": {
     "@babel/core": "^7.3.4",
     "@babel/plugin-proposal-class-properties": "^7.3.4",

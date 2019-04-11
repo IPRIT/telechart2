@@ -14,7 +14,7 @@
 
 ## Demo
 
-[Demo page](https://iprit.github.io/telechart/)
+[Demo page](https://iprit.github.io/telechart2/)
 
 ### Features
 
@@ -64,5 +64,5 @@ Author [Alexander Belov](https://t.me/belov) 🔗
 
 ## License
 
-[MIT](https://github.com/IPRIT/telechart/blob/master/LICENSE)
+[MIT](https://github.com/IPRIT/telechart2/blob/master/LICENSE)
 
