@@ -58,6 +58,12 @@ export class Telechart2 extends EventEmitter {
    * @type {HTMLCanvasElement | OffscreenCanvas}
    * @private
    */
+  uiCanvas = null;
+
+  /**
+   * @type {HTMLCanvasElement | OffscreenCanvas}
+   * @private
+   */
   navigationSeriesCanvas = null;
 
   /**
@@ -152,13 +158,14 @@ export class Telechart2 extends EventEmitter {
    * @static
    * @param {HTMLCanvasElement} mainCanvas
    * @param {HTMLCanvasElement} axisCanvas
+   * @param {HTMLCanvasElement} uiCanvas
    * @param {HTMLCanvasElement} navigationSeriesCanvas
    * @param {HTMLCanvasElement} navigationUICanvas
    * @param {TelechartApi} api
    * @param {Object} options
    * @param environmentOptions
    */
-  static create ({ mainCanvas, axisCanvas, navigationSeriesCanvas, navigationUICanvas, api }, options = {}, environmentOptions = {}) {
+  static create ({ mainCanvas, axisCanvas, uiCanvas, navigationSeriesCanvas, navigationUICanvas, api }, options = {}, environmentOptions = {}) {
     const chart = new Telechart2();
 
     // only in windowed context
@@ -168,6 +175,7 @@ export class Telechart2 extends EventEmitter {
 
     chart.setMainCanvas( mainCanvas );
     chart.setAxisCanvas( axisCanvas );
+    chart.setUICanvas( uiCanvas );
     chart.setNavigationSeriesCanvas( navigationSeriesCanvas );
     chart.setNavigationUICanvas( navigationUICanvas );
 
@@ -196,10 +204,16 @@ export class Telechart2 extends EventEmitter {
       canvasWidth,
       canvasHeight,
 
-      // main canvas
+      // axis canvas
       axisCanvasOffset,
       axisCanvasWidth,
       axisCanvasHeight,
+
+
+      // ui canvas
+      uiCanvasOffset,
+      uiCanvasWidth,
+      uiCanvasHeight,
 
       // navigation canvas series
       navigationSeriesCanvasOffset,
@@ -223,6 +237,10 @@ export class Telechart2 extends EventEmitter {
     this.axisCanvasOffset = axisCanvasOffset;
     this.axisCanvasWidth = axisCanvasWidth;
     this.axisCanvasHeight = axisCanvasHeight;
+
+    this.uiCanvasOffset = uiCanvasOffset;
+    this.uiCanvasWidth = uiCanvasWidth;
+    this.uiCanvasHeight = uiCanvasHeight;
 
     this.navigationSeriesCanvasOffset = navigationSeriesCanvasOffset;
     this.navigationSeriesCanvasWidth = navigationSeriesCanvasWidth;
@@ -256,6 +274,13 @@ export class Telechart2 extends EventEmitter {
    */
   setAxisCanvas (canvas) {
     this.axisCanvas = canvas;
+  }
+
+  /**
+   * @param {HTMLCanvasElement} canvas
+   */
+  setUICanvas (canvas) {
+    this.uiCanvas = canvas;
   }
 
   /**
@@ -357,6 +382,7 @@ export class Telechart2 extends EventEmitter {
   initializeContexts () {
     this.mainContext = this.mainCanvas.getContext( '2d' );
     this.axisContext = this.axisCanvas.getContext( '2d' );
+    this.uiContext = this.uiCanvas.getContext( '2d' );
     this.navigationSeriesContext = this.navigationSeriesCanvas.getContext( '2d' );
     this.navigationUIContext = this.navigationUICanvas.getContext( '2d' );
 
@@ -370,6 +396,9 @@ export class Telechart2 extends EventEmitter {
 
       this.axisCanvas.width = this.axisCanvasWidth * this.devicePixelRatio;
       this.axisCanvas.height = this.axisCanvasHeight * this.devicePixelRatio;
+
+      this.uiCanvas.width = this.uiCanvasWidth * this.devicePixelRatio;
+      this.uiCanvas.height = this.uiCanvasHeight * this.devicePixelRatio;
 
       this.navigationSeriesCanvas.width = this.navigationSeriesCanvasWidth * this.devicePixelRatio;
       this.navigationSeriesCanvas.height = this.navigationSeriesCanvasHeight * this.devicePixelRatio;
@@ -385,6 +414,7 @@ export class Telechart2 extends EventEmitter {
     // downscale to provide hidpi picture
     this.mainContext.scale( this.devicePixelRatio, this.devicePixelRatio );
     this.axisContext.scale( this.devicePixelRatio, this.devicePixelRatio );
+    this.uiContext.scale( this.devicePixelRatio, this.devicePixelRatio );
     this.navigationSeriesContext.scale( this.devicePixelRatio, this.devicePixelRatio );
     this.navigationUIContext.scale( this.devicePixelRatio, this.devicePixelRatio );
   }

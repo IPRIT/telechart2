@@ -201,6 +201,11 @@ export class DataLabel extends EventEmitter {
     this.hasArrow = state;
   }
 
+  onResize () {
+    this.updateDimensionsRequested = true;
+    this.updatePositionRequested = true;
+  }
+
   /**
    * @private
    */

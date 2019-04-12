@@ -40,6 +40,16 @@ export class TelechartApi extends EventEmitter {
   /**
    * @type {HTMLCanvasElement}
    */
+  axisCanvas = null;
+
+  /**
+   * @type {HTMLCanvasElement}
+   */
+  uiCanvas = null;
+
+  /**
+   * @type {HTMLCanvasElement}
+   */
   navigationSeriesCanvas = null;
 
   /**
@@ -78,12 +88,14 @@ export class TelechartApi extends EventEmitter {
 
     const mainCanvas = this.mainCanvas = this._createMainCanvas();
     const axisCanvas = this.axisCanvas = this._createAxisCanvas();
+    const uiCanvas = this.uiCanvas = this._createUICanvas();
     const navigationSeriesCanvas = this.navigationSeriesCanvas = this._createNavigationSeriesCanvas();
     const navigationUICanvas = this.navigationUICanvas = this._createNavigationUICanvas();
 
     const mainCanvasRoot = this.mainCanvasRoot = this._createMainCanvasRoot( root );
     mainCanvasRoot.appendChild( mainCanvas );
     mainCanvasRoot.appendChild( axisCanvas );
+    mainCanvasRoot.appendChild( uiCanvas );
 
     const navigatorRoot = this.navigatorRoot = this._createNavigatorRoot( root );
     navigatorRoot.appendChild( navigationSeriesCanvas );
@@ -91,6 +103,7 @@ export class TelechartApi extends EventEmitter {
 
     this._updateMainCanvasDimensions( mainCanvas );
     this._updateAxisCanvasDimensions( axisCanvas );
+    this._updateUICanvasDimensions( uiCanvas );
     this._updateNavigationSeriesCanvasDimensions( navigationSeriesCanvas );
     this._updateNavigationUICanvasDimensions( navigationUICanvas );
 
@@ -110,6 +123,7 @@ export class TelechartApi extends EventEmitter {
     if (this.isOffscreenCanvas) {
       const mainOffscreen = mainCanvas.transferControlToOffscreen();
       const axisOffscreen = axisCanvas.transferControlToOffscreen();
+      const uiOffscreen = uiCanvas.transferControlToOffscreen();
       const navigationSeriesOffscreen = navigationSeriesCanvas.transferControlToOffscreen();
       const navigationUIOffscreen = navigationUICanvas.transferControlToOffscreen();
 
@@ -121,12 +135,14 @@ export class TelechartApi extends EventEmitter {
         type: TelechartWorkerEvents.SETUP,
         mainCanvas: mainOffscreen,
         axisCanvas: axisOffscreen,
+        uiCanvas: uiOffscreen,
         navigationSeriesCanvas: navigationSeriesOffscreen,
         navigationUICanvas: navigationUIOffscreen,
         settings
       }, [
         mainOffscreen,
         axisOffscreen,
+        uiOffscreen,
         navigationSeriesOffscreen,
         navigationUIOffscreen
       ]);
@@ -136,6 +152,7 @@ export class TelechartApi extends EventEmitter {
       this.telechart = createTelechart({
         mainCanvas,
         axisCanvas,
+        uiCanvas,
         navigationSeriesCanvas,
         navigationUICanvas,
         api: this,
@@ -313,10 +330,13 @@ export class TelechartApi extends EventEmitter {
   _onResize (ev) {
     this._updateMainCanvasDimensions();
     this._updateAxisCanvasDimensions();
+    this._updateUICanvasDimensions();
     this._updateNavigationSeriesCanvasDimensions();
     this._updateNavigationUICanvasDimensions();
 
     this._updateEnvironmentOptions();
+
+    this.dataLabel.onResize();
 
     this.emit( 'resize', ev );
   }
@@ -366,6 +386,30 @@ export class TelechartApi extends EventEmitter {
       }),
       width: (devicePixelRatio * this.axisCanvasWidth) | 0,
       height: (devicePixelRatio * this.axisCanvasHeight) | 0
+    });
+  }
+
+  /**
+   * @private
+   */
+  _updateUICanvasDimensions (canvas = this.uiCanvas) {
+    const parentNode = canvas.parentNode;
+
+    this.uiCanvasWidth = clampNumber(
+      getElementWidth( parentNode ),
+      ChartVariables.minWidth
+    );
+    this.uiCanvasHeight = ChartVariables.mainMaxHeight;
+
+    const devicePixelRatio = window.devicePixelRatio || 1;
+
+    setAttributes(canvas, {
+      style: cssText({
+        width: `${this.uiCanvasWidth}px`,
+        height: `${this.uiCanvasHeight}px`
+      }),
+      width: (devicePixelRatio * this.uiCanvasWidth) | 0,
+      height: (devicePixelRatio * this.uiCanvasHeight) | 0
     });
   }
 
@@ -448,6 +492,10 @@ export class TelechartApi extends EventEmitter {
     const axisCanvasWidth = this.axisCanvasWidth;
     const axisCanvasHeight = this.axisCanvasHeight;
 
+    const uiCanvasOffset = getElementOffset( this.uiCanvas );
+    const uiCanvasWidth = this.uiCanvasWidth;
+    const uiCanvasHeight = this.uiCanvasHeight;
+
     const navigationSeriesCanvasOffset = getElementOffset( this.navigationSeriesCanvas );
     const navigationSeriesCanvasWidth = this.navigationSeriesCanvasWidth;
     const navigationSeriesCanvasHeight = this.navigationSeriesCanvasHeight;
@@ -471,6 +519,11 @@ export class TelechartApi extends EventEmitter {
       axisCanvasOffset,
       axisCanvasWidth,
       axisCanvasHeight,
+
+      // axis canvas
+      uiCanvasOffset,
+      uiCanvasWidth,
+      uiCanvasHeight,
 
       // navigation canvas series
       navigationSeriesCanvasOffset,
@@ -554,6 +607,17 @@ export class TelechartApi extends EventEmitter {
     return createElement('canvas', {
       attrs: {
         class: 'telechart2-axis-canvas'
+      }
+    });
+  }
+
+  /**
+   * @private
+   */
+  _createUICanvas () {
+    return createElement('canvas', {
+      attrs: {
+        class: 'telechart2-ui-canvas'
       }
     });
   }

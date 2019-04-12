@@ -26,6 +26,8 @@ export const ChartThemesColors = {
 
 export const Colors = {
   default: {
+    color: '#FFFFFF',
+
     sliderBorder: '#C0D1E1',
     sliderOverlay: '#E2EEF9',
     sliderOverlayAlpha: .6,
@@ -37,6 +39,8 @@ export const Colors = {
     axisColorAlpha: .1
   },
   dark: {
+    color: '#242F3E',
+
     sliderBorder: '#56626D',
     sliderOverlay: '#304259',
     sliderOverlayAlpha: .6,

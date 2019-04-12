@@ -1,3 +1,4 @@
+import { TelechartWorkerEvents } from '../worker/worker-events';
 import { EventEmitter } from '../misc/EventEmitter';
 import { SeriesTypes } from '../series/SeriesTypes';
 import { Series } from '../series/Series';
@@ -12,9 +13,8 @@ import {
   binarySearchIndexes, ChartVariables,
   clampNumber,
   ensureNumber,
-  isDate, throttle,
+  isDate,
 } from '../../utils';
-import { TelechartWorkerEvents } from '../worker/worker-events';
 
 let CHART_ID = 1;
 
@@ -194,27 +194,18 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {boolean}
-   * @private
    */
-  _cursorInsideChart = false;
+  cursorInsideChart = false;
 
   /**
    * @type {number}
-   * @private
    */
-  _axisCursorPositionX = 0;
+  axisCursorPositionX = 0;
 
   /**
    * @type {number}
-   * @private
    */
-  _axisCursorPointIndex = 0;
-
-  /**
-   * @type {boolean}
-   * @private
-   */
-  _axisCursorUpdateNeeded = false;
+  axisCursorPointIndex = 0;
 
   /**
    * @type {ChartAxisY}
@@ -240,6 +231,18 @@ export class BaseChart extends EventEmitter {
   isYScaled = false;
 
   /**
+   * @type {boolean}
+   * @private
+   */
+  isPercentage = false;
+
+  /**
+   * @type {boolean}
+   * @private
+   */
+  isStacked = false;
+
+  /**
    * @param {Telechart2} context
    * @param {Object} options
    */
@@ -258,9 +261,6 @@ export class BaseChart extends EventEmitter {
     this.approximateViewportPoints();
 
     if (this.isChart) {
-      /*this.initializeAxisCursor();
-      this.initializeLabel();*/
-
       this.initializeAxisY();
       this.initializeAxisX();
     }
@@ -310,16 +310,6 @@ export class BaseChart extends EventEmitter {
 
     if (extremesUpdated) {
       this.updateViewportPixel();
-    }
-
-    // cursor updating
-    if (this._axisCursorUpdateNeeded && this.isChart) {
-      // this._updateAxisCursor();
-      // redrawChart = true;
-
-      redrawAxis = true;
-
-      this._axisCursorUpdateNeeded = false;
     }
 
     this.eachSeries(line => {
@@ -432,14 +422,6 @@ export class BaseChart extends EventEmitter {
 
       this._series.push( series );
     }
-  }
-
-  /**
-   * Creates chart cursor
-   */
-  initializeAxisCursor () {
-    this._createAxisCursor();
-    this._addAxisCursorEvents();
   }
 
   /**
@@ -561,12 +543,11 @@ export class BaseChart extends EventEmitter {
     // recompute pixel values
     this.updateViewportPixel();
 
-    // update cursor in next animation frame
-    this._axisCursorUpdateNeeded = true;
-
     if (this._xAxisView) {
       this._xAxisView.requestUpdateAnimations();
     }
+
+    this.emit( ChartEvents.REDRAW_CURSOR );
   }
 
   /**
@@ -777,7 +758,6 @@ export class BaseChart extends EventEmitter {
     // making requests for future animation update
     this._viewportRangeUpdateNeeded = true;
     this._viewportPointsGroupingNeeded = true;
-    this._axisCursorUpdateNeeded = true;
 
     if (this._yAxisView) {
       this._yAxisView.onChartResize();
@@ -789,6 +769,8 @@ export class BaseChart extends EventEmitter {
 
     this.redrawChartNeeded = true;
     this.redrawChart();
+
+    this.emit( ChartEvents.REDRAW_CURSOR );
   }
 
   /**
@@ -1150,6 +1132,13 @@ export class BaseChart extends EventEmitter {
   }
 
   /**
+   * @return {Array<Series>}
+   */
+  get series () {
+    return this._series;
+  }
+
+  /**
    * @private
    */
   _updateViewportIndexes () {
@@ -1347,17 +1336,23 @@ export class BaseChart extends EventEmitter {
       return;
     }
 
-    const oldIndex = this._axisCursorPointIndex;
+    const oldIndex = this.axisCursorPointIndex;
 
-    this._axisCursorPositionX = this.projectCursorToX( cursorPosition );
-    this._axisCursorPointIndex = this._findPointIndexByCursor( this._axisCursorPositionX );
-    this._axisCursorUpdateNeeded = true;
+    const cursorX = this.projectCursorToX( cursorPosition );
+    this.axisCursorPointIndex = this._findPointIndexByCursor( cursorX );
+    this.axisCursorPositionX = this._xAxis[ this.axisCursorPointIndex ];
 
-    this.eachSeries(line => {
-      line.setMarkerPointIndex( this._axisCursorPointIndex );
-    });
+    const indexChanged = this.axisCursorPointIndex !== oldIndex;
 
-    this._updateLabel( this._axisCursorPointIndex !== oldIndex );
+    if (indexChanged) {
+      this.emit(ChartEvents.TRANSLATE_MARKERS, [
+        this.axisCursorPositionX,
+        this._xAxis[ oldIndex ]
+      ]);
+      this.emit( ChartEvents.REDRAW_CURSOR );
+    }
+
+    this._updateLabel( indexChanged );
   }
 
   _updateLabel (changed = true) {
@@ -1420,12 +1415,12 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _setInsideChartState (isInside, immediate = false) {
-    const changed = this._cursorInsideChart !== isInside;
+    const changed = this.cursorInsideChart !== isInside;
     if (!changed && !immediate) {
       return;
     }
 
-    this._cursorInsideChart = isInside;
+    this.cursorInsideChart = isInside;
 
     if (this._markerHideTimeout) {
       clearTimeout( this._markerHideTimeout );
@@ -1449,13 +1444,9 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _onCursorInsideChartChanged (isInside) {
-    if (isInside) {
-      this._showMarkers();
-      // this._showCursor();
-    } else {
-      this._hideMarkers();
-      // this._hideCursor();
-    }
+    isInside
+      ? this._showCursor()
+      : this._hideCursor();
 
     this._toggleDataLabelVisibility( isInside );
   }
@@ -1478,21 +1469,15 @@ export class BaseChart extends EventEmitter {
   /**
    * @private
    */
-  _showMarkers () {
-    this.eachSeries(line => {
-      if (line.isVisible) {
-        line.showMarker();
-      }
-    });
+  _showCursor () {
+    this.emit( ChartEvents.SHOW_CURSOR );
   }
 
   /**
    * @private
    */
-  _hideMarkers () {
-    this.eachSeries(line => {
-      line.hideMarker();
-    });
+  _hideCursor () {
+    this.emit( ChartEvents.HIDE_CURSOR );
   }
 
   /**
@@ -1502,6 +1487,7 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _insideChart ({ pageX, pageY }) {
+    // todo: workaround from previous Telechart version
     return true;
   }
 
@@ -1512,7 +1498,7 @@ export class BaseChart extends EventEmitter {
   _prepareLabelData () {
     const data = [];
 
-    const index = this._axisCursorPointIndex;
+    const index = this.axisCursorPointIndex;
     const x = this._xAxis[ index ];
 
     this.eachSeries(line => {

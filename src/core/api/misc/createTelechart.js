@@ -8,6 +8,7 @@ export function createTelechart (env) {
   const {
     mainCanvas,
     axisCanvas,
+    uiCanvas,
     navigationSeriesCanvas,
     navigationUICanvas,
     api = null,
@@ -20,6 +21,7 @@ export function createTelechart (env) {
   return Telechart2.create({
     mainCanvas,
     axisCanvas,
+    uiCanvas,
     navigationSeriesCanvas,
     navigationUICanvas,
     api

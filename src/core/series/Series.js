@@ -91,42 +91,6 @@ export class Series extends EventEmitter {
   _pathUpdateNeeded = false;
 
   /**
-   * @type {boolean}
-   * @private
-   */
-  _markerVisible = false;
-
-  /**
-   * @type {Tween}
-   * @private
-   */
-  _markerAnimation = null;
-
-  /**
-   * @type {number}
-   * @private
-   */
-  _markerRadius = 0;
-
-  /**
-   * @type {number}
-   * @private
-   */
-  _maxMarkerRadius = 4;
-
-  /**
-   * @type {number}
-   * @private
-   */
-  _markerPointIndex = 0;
-
-  /**
-   * @type {boolean}
-   * @private
-   */
-  _markerPositionUpdateNeeded = false;
-
-  /**
    * @type {Array<Point>}
    * @private
    */
@@ -158,9 +122,8 @@ export class Series extends EventEmitter {
 
   /**
    * @type {number}
-   * @private
    */
-  _opacity = 1;
+  opacity = 1;
 
   /**
    * @type {Tween}
@@ -216,23 +179,6 @@ export class Series extends EventEmitter {
     if (pathUpdated) {
       this.chart.redrawChartNeeded = true;
     }
-
-    // only base charts has markers
-    if (this.isLineChart) {
-      if (this._markerPositionUpdateNeeded || pathUpdated) {
-        this._updateMarkerPosition();
-
-        this._markerPositionUpdateNeeded = false;
-      }
-
-      const markerAnimation = this._markerAnimation;
-      const hasMarkerAnimation = markerAnimation && markerAnimation.isRunning;
-      if (hasMarkerAnimation) {
-        markerAnimation.update( deltaTime );
-
-        // this.updateMarkerRadius();
-      }
-    }
   }
 
   render (context = this.chart.telechart.mainContext) {
@@ -244,7 +190,7 @@ export class Series extends EventEmitter {
   }
 
   drawPath (context) {
-    if (!this._opacity) {
+    if (!this.opacity) {
       return;
     }
 
@@ -264,7 +210,7 @@ export class Series extends EventEmitter {
    * @param {number} step
    */
   drawPathByInterval (context, interval, step = 1) {
-    context.globalAlpha = this._opacity;
+    context.globalAlpha = this.opacity;
     context.strokeStyle = this._color;
     context.lineWidth = this.strokeWidth;
     context.lineJoin = 'bevel';
@@ -305,22 +251,6 @@ export class Series extends EventEmitter {
       : this.setVisible();
   }
 
-  showMarker () {
-    this._createMarkerShowAnimation();
-    this._markerVisible = true;
-  }
-
-  hideMarker () {
-    this._createMarkerHideAnimation();
-    this._markerVisible = false;
-  }
-
-  toggleMarker () {
-    this._markerVisible
-      ? this.hideMarker()
-      : this.showMarker();
-  }
-
   /**
    * @private
    */
@@ -355,18 +285,17 @@ export class Series extends EventEmitter {
   }
 
   /**
-   * Mark to update marker in next animation frame
-   */
-  setMarkerPointIndex (index) {
-    this._markerPointIndex = index;
-    this._markerPositionUpdateNeeded = true;
-  }
-
-  /**
    * @return {number}
    */
   get id () {
     return this._id;
+  }
+
+  /**
+   * @return {Array<number>}
+   */
+  get yAxis () {
+    return this._yAxis;
   }
 
   /**
@@ -489,22 +418,6 @@ export class Series extends EventEmitter {
   /**
    * @private
    */
-  _updateMarkerPosition () {
-    /*const x = this._xAxis[ this._markerPointIndex ];
-    const y = this._yAxis[ this._markerPointIndex ];
-
-    const svgX = this.chart.projectXToCanvas( x );
-    const svgY = this.chart.projectYToCanvas( y );
-
-    setAttributesNS(this._marker, {
-      cx: svgX,
-      cy: svgY
-    });*/
-  }
-
-  /**
-   * @private
-   */
   _createShowAnimation () {
     if (this._opacityAnimation
       && this._opacityAnimationType === OpacityAnimationType.showing) {
@@ -531,7 +444,7 @@ export class Series extends EventEmitter {
    * @private
    */
   _createOpacityAnimation (opacity) {
-    this._opacityAnimation = new Tween(this, '_opacity', opacity, {
+    this._opacityAnimation = new Tween(this, 'opacity', opacity, {
       duration: 300,
       timingFunction: 'easeInOutQuad'
     });
@@ -546,50 +459,6 @@ export class Series extends EventEmitter {
     this._opacityAnimation.on( TweenEvents.CANCELLED, onFinished );
 
     this._opacityAnimation.start();
-  }
-
-  /**
-   * @private
-   */
-  _createMarkerShowAnimation () {
-    if (this._markerAnimation && this._markerVisible) {
-      // already have animation
-      return;
-    }
-
-    this._createMarkerAnimation( this._maxMarkerRadius );
-  }
-
-  /**
-   * @private
-   */
-  _createMarkerHideAnimation () {
-    if (this._markerAnimation && !this._markerVisible) {
-      // already have animation
-      return;
-    }
-
-    this._createMarkerAnimation( 0 );
-  }
-
-  /**
-   * @param {number} radius
-   * @private
-   */
-  _createMarkerAnimation (radius) {
-    this._markerAnimation = new Tween(this, '_markerRadius', radius, {
-      duration: this._markerVisible ? 300 : 150,
-      timingFunction: 'easeInOutCubic'
-    });
-
-    const onFinished = _ => {
-      this._markerAnimation = null;
-    };
-
-    this._markerAnimation.on( TweenEvents.COMPLETE, onFinished );
-    this._markerAnimation.on( TweenEvents.CANCELLED, onFinished );
-
-    this._markerAnimation.start();
   }
 
   /**
