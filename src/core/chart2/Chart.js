@@ -315,7 +315,7 @@ export class Chart extends BaseChart {
 
     const viewportDistance = this.viewportRange[ 1 ] - this.viewportRange[ 0 ];
 
-    const velocity = viewportDistance * .0000005;
+    const velocity = viewportDistance * .000001;
     const acceleration = viewportDistance * .0000001;
     const maxVelocity = 1e9;
 

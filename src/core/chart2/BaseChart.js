@@ -226,6 +226,11 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {boolean}
+   */
+  isLineChart = false;
+
+  /**
+   * @type {boolean}
    * @private
    */
   isYScaled = false;
@@ -395,6 +400,10 @@ export class BaseChart extends EventEmitter {
     this.isPercentage = percentage;
     this.isStacked = stacked;
 
+    if (!this.isStacked && !this.isPercentage) {
+      this.isLineChart = true;
+    }
+
     const xAxisIndex = columns.findIndex(column => {
       return types[ column[ 0 ] ] === SeriesTypes.x;
     });
@@ -409,6 +418,10 @@ export class BaseChart extends EventEmitter {
       const type = types[ label ];
       const color = colors[ label ];
       const name = names[ label ];
+
+      if (type === 'bar') {
+        this.isLineChart = false;
+      }
 
       // prepare series settings
       const settings = {
@@ -644,9 +657,11 @@ export class BaseChart extends EventEmitter {
    * Find new local min and max extremes among visible series
    */
   updateLocalExtremes () {
-    let localMinY = Infinity;
+    const isLineChart = this.isLineChart;
+
+    let localMinY = isLineChart ? Infinity : 0;
     let localMaxY = 0;
-    let globalMinY = Infinity;
+    let globalMinY = isLineChart ? Infinity : 0;
     let globalMaxY = 0;
 
     this.eachSeries(line => {
