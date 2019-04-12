@@ -39,6 +39,8 @@ export class ChartAxisY extends ChartAxis {
 
     const fontSize = this.fontSize;
 
+    const line = this.chart.series[ 0 ];
+
     // values
     context.font = `${fontSize}px Arial`;
     context.fillStyle = textColor;
@@ -55,7 +57,7 @@ export class ChartAxisY extends ChartAxis {
       const element = this.elements[ i ];
       const y = this._computeValuePosition( element.value );
 
-      context.globalAlpha = textColorAlpha * element.opacity;
+      context.globalAlpha = textColorAlpha * element.opacity * line.opacity;
       context.fillText(element.formattedValue, x, y - 5);
 
       if (drawAxes) {

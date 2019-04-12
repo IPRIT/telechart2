@@ -73,6 +73,11 @@ export class TelechartApi extends EventEmitter {
   dataLabel = null;
 
   /**
+   * @type {number[]}
+   */
+  navigationRange = [ 0, 1 ];
+
+  /**
    * @param {string | Element} mountTo
    * @param options
    */
@@ -237,9 +242,20 @@ export class TelechartApi extends EventEmitter {
     }
   }
 
+  setNavigationRange (range) {
+    console.log( range );
+
+    this.navigationRange = range;
+  }
+
   addEventListeners () {
     this._attachResizeListener();
     this._attachMainListeners();
+    this._attachNavigatorListeners();
+
+    if (this._resizeListener) {
+      window.addEventListener('load', _ => this._resizeListener());
+    }
   }
 
   initializeDataLabel () {
@@ -467,6 +483,8 @@ export class TelechartApi extends EventEmitter {
   _updateEnvironmentOptions () {
     const environmentOptions = this._getEnvironmentOptions();
 
+    this.environmentOptions = environmentOptions;
+
     if (this.isOffscreenCanvas) {
       this.worker.postMessage({
         type: TelechartWorkerEvents.UPDATE_ENVIRONMENT,
@@ -478,7 +496,7 @@ export class TelechartApi extends EventEmitter {
   }
 
   /**
-   * @return {{canvasOffset: {top: number, left: number}, devicePixelRatio: number}}
+   * @return {{axisCanvasOffset: {top: number, left: number}, canvasWidth: number, canvasOffset: {top: number, left: number}, uiCanvasHeight: *, navigationSeriesCanvasHeight: (number|*), uiCanvasOffset: {top: number, left: number}, navigationUICanvasHeight: (number|*), navigationUICanvasWidth: number, devicePixelRatio: number, axisCanvasHeight: *, uiCanvasWidth: number, canvasHeight: *, isTouchEventsSupported: boolean, isTransformSupported: *, navigationSeriesCanvasOffset: {top: number, left: number}, navigationSeriesCanvasWidth: (number|*), axisCanvasWidth: number, navigationUICanvasOffset: {top: number, left: number}}}
    * @private
    */
   _getEnvironmentOptions () {
@@ -811,5 +829,100 @@ export class TelechartApi extends EventEmitter {
     return isTouchEvent ? {
       targetTouches: [ result ]
     } : result;
+  }
+
+  _attachNavigatorListeners () {
+    this.navigationUICanvas.addEventListener('mousedown', ev => {
+      this._onNavUICanvasMouseDown( ev );
+    });
+
+    this.navigationUICanvas.addEventListener('mousemove', ev => {
+      this._onNavUICanvasMouseMove( ev );
+    });
+
+    // worker events
+    if (this.worker) {
+      const eventEmitter = new EventEmitter();
+
+      this.worker.addEventListener('message', ev => {
+        const type = ev.data.type;
+        eventEmitter.emit( type, ev );
+      });
+
+      eventEmitter.on(TelechartWorkerEvents.SET_NAVIGATION_RANGE, ev => {
+        const { range } = ev.data;
+        this.setNavigationRange( range );
+      });
+    }
+  }
+
+  _onNavUICanvasMouseDown (ev) {
+    // on mouse down
+    const component = this._detectNavUIComponent( ev );
+    console.log( component );
+  }
+
+  _onNavUICanvasMouseMove (ev) {
+    // on mouse move
+  }
+
+  /**
+   * @param ev
+   * @return {{pageY: *, pageX: *}}
+   * @private
+   */
+  _getEventTouch (ev) {
+    return ev.targetTouches && ev.targetTouches.length
+      ? ev.targetTouches[ 0 ] : ev;
+  }
+
+  /**
+   * @param ev
+   * @private
+   */
+  _detectNavUIComponent (ev) {
+    const { pageX }  = this._getEventTouch( ev );
+    const env = this.environmentOptions;
+    const uiOffset = env.navigationUICanvasOffset;
+    const uiWidth = env.navigationUICanvasWidth;
+
+    const offsetX = pageX - uiOffset.left;
+
+    const [ min, max ] = this.navigationRange;
+
+    const realWidth = uiWidth - 2 * ChartVariables.chartPaddingLeftRight;
+    const cursorX = offsetX - ChartVariables.chartPaddingLeftRight;
+
+    const borderWidth = 9;
+    const borderTapArea = borderWidth;
+
+    const leftBorderOffsetX = realWidth * min + borderWidth / 2;
+    const rightBorderOffsetX = realWidth * max - borderWidth / 2;
+
+    const leftMinX = leftBorderOffsetX - borderTapArea;
+    const leftMaxX = leftBorderOffsetX + borderTapArea;
+
+    if (leftMinX <= cursorX && cursorX <= leftMaxX) {
+      return 'slider.leftBorder';
+    }
+
+    const rightMinX = rightBorderOffsetX - borderTapArea;
+    const rightMaxX = rightBorderOffsetX + borderTapArea;
+
+    if (rightMinX <= cursorX && cursorX <= rightMaxX) {
+      return 'slider.rightBorder';
+    }
+
+    if (leftBorderOffsetX <= cursorX && cursorX <= rightBorderOffsetX) {
+      return 'slider';
+    }
+
+    if (0 <= cursorX && cursorX <= leftBorderOffsetX) {
+      return 'ui.leftOverlay';
+    }
+
+    if (rightBorderOffsetX <= cursorX && cursorX <= realWidth) {
+      return 'ui.leftOverlay';
+    }
   }
 }

@@ -8,6 +8,7 @@ import {
   ChartVariables,
   clampNumber, drawRoundedRect
 } from '../../utils';
+import { TelechartWorkerEvents } from '../worker/worker-events';
 
 export class NavigatorChart extends BaseChart {
 
@@ -104,6 +105,8 @@ export class NavigatorChart extends BaseChart {
 
     this._updateNavigatorDimensions();
 
+    this.sendRangeToApi();
+
 
     if (Math.random() > .7) {
       const f = _ => {
@@ -132,6 +135,8 @@ export class NavigatorChart extends BaseChart {
       );
 
       this.redrawSliderUINeeded = true;
+
+      this.sendRangeToApi();
     }
   }
 
@@ -293,7 +298,21 @@ export class NavigatorChart extends BaseChart {
     super.onResize();
 
     this._updateNavigatorDimensions();
+
     this.redrawSliderUI();
+  }
+
+  sendRangeToApi () {
+    const range = this._navigatorRange;
+
+    if (this.telechart.isWorker) {
+      this.telechart.global.postMessage({
+        type: TelechartWorkerEvents.SET_NAVIGATION_RANGE,
+        range
+      });
+    } else {
+      this.telechart.dedicatedApi.setNavigationRange( range );
+    }
   }
 
   /**
@@ -351,6 +370,8 @@ export class NavigatorChart extends BaseChart {
     if (emitChange) {
       this.emit( NavigatorChartEvents.RANGE_CHANGED, this._navigatorRange );
     }
+
+    this.sendRangeToApi();
   }
 
   /**
