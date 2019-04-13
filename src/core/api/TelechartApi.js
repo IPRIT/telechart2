@@ -1068,8 +1068,20 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _detectNavUIComponent (ev) {
+    const wrapComponent = component => {
+      return {
+        scaledPosition,
+        component
+      };
+    };
+
     const { pageX } = this._getEventTouch( ev );
     const env = this.environmentOptions;
+
+    if (!env) {
+      return wrapComponent( 0 );
+    }
+
     const uiOffset = env.navigationUICanvasOffset;
     const uiWidth = env.navigationUICanvasWidth;
 
@@ -1089,13 +1101,6 @@ export class TelechartApi extends EventEmitter {
 
     const leftMinX = leftBorderOffsetX - borderTapArea;
     const leftMaxX = leftBorderOffsetX + borderTapArea / 1.5;
-
-    const wrapComponent = component => {
-      return {
-        scaledPosition,
-        component
-      };
-    };
 
     if (leftMinX <= cursorX && cursorX <= leftMaxX) {
       return wrapComponent( NavUIComponent.SLIDER.LEFT_BORDER );

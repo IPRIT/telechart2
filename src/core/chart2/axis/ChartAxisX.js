@@ -44,8 +44,17 @@ export class ChartAxisX extends ChartAxis {
 
     const y = this.chart.chartHeight + this.chart.seriesOffsetTop + this.fontSize + 4;
 
+    const leftBorder = -this.labelWidth / 2;
+    const rightBorder = this.chart.chartWidth + this.labelWidth / 2;
+
     for (let i = 0; i < this.elements.length; ++i) {
       const element = this.elements[ i ];
+      const x = this._computeValuePosition( this.axesValuesMapping[ element.value ] );
+
+      if (x < leftBorder || x > rightBorder) {
+        continue;
+      }
+
       const animation = element.animation;
       const hasAnimation = !!animation;
       const isShowing = hasAnimation ? element.state === AxisElementState.showing : false;
@@ -55,7 +64,6 @@ export class ChartAxisX extends ChartAxis {
             : element.animationObject.opacity * element.opacityScale
         )
         : element.opacity;
-      const x = this._computeValuePosition( this.axesValuesMapping[ element.value ] );
 
       context.globalAlpha = textColorAlpha * opacity;
       context.fillText(element.formattedValue, x, y);
