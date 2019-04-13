@@ -954,11 +954,6 @@ export class TelechartApi extends EventEmitter {
   _onNavUICanvasTouchStart (ev) {
     // on touch start
 
-    if (this._navUIDragStarted) {
-      return;
-    }
-    this._navUIDragStarted = true;
-
     const {
       pageX, pageY
     } = ev.targetTouches[ 0 ];
@@ -1017,7 +1012,12 @@ export class TelechartApi extends EventEmitter {
   _onNavUICanvasTouchEnd (ev) {
     // on touch end
 
-    if (ev.cancelable) {
+    const component = this._currentNavComponent;
+    const eventCancelNeeded = component === NavUIComponent.SLIDER.INNER
+      || component === NavUIComponent.SLIDER.RIGHT_BORDER
+      || component === NavUIComponent.SLIDER.LEFT_BORDER;
+
+    if (eventCancelNeeded && ev.cancelable) {
       ev.preventDefault();
     }
 
@@ -1028,6 +1028,7 @@ export class TelechartApi extends EventEmitter {
 
   _onNavUICanvasClick (ev) {
     // on click
+
     const { component, scaledPosition } = this._detectNavUIComponent( ev );
 
     this._currentNavComponent = component;
@@ -1167,6 +1168,11 @@ export class TelechartApi extends EventEmitter {
   }
 
   _onSliderTouchStart (ev) {
+    if (this._navUIDragStarted) {
+      return;
+    }
+    this._navUIDragStarted = true;
+
     this._sendNavUICanvasEventThrottled( 'slider.touchstart', this._transferableEvent( ev ) );
   }
 
@@ -1229,6 +1235,11 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _onSliderControllerTouchStart (ev, direction) {
+    if (this._navUIDragStarted) {
+      return;
+    }
+    this._navUIDragStarted = true;
+
     this._sendNavUICanvasEventThrottled( 'slider-controller.touchstart', this._transferableEvent( ev ), [ direction ] );
   }
 
