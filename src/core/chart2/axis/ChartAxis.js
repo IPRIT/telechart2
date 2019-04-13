@@ -125,10 +125,8 @@ export class ChartAxis extends EventEmitter {
       return oldValues.indexOf( value ) === -1;
     });
 
-    const perf = performance.now();
     this.createNewElements( valuesToCreate );
     this.deleteOldElements( valuesToDelete );
-    // console.log( performance.now() - perf );
   }
 
   /**
@@ -147,7 +145,12 @@ export class ChartAxis extends EventEmitter {
 
       if (!element) {
         element = this.initializeWrapper( valuesToCreate[ i ] );
+        element.startOpacity = 0;
         this.elements.push( element );
+      } else if (element.animation) {
+        element.startOpacity = element.animationObject.opacity;
+      } else {
+        element.startOpacity = 0;
       }
 
       elements.push( element );
@@ -181,6 +184,12 @@ export class ChartAxis extends EventEmitter {
         continue;
       }
 
+      if (element.animation) {
+        element.startOpacity = element.animationObject.opacity;
+      } else {
+        element.startOpacity = 1;
+      }
+
       elements.push( element );
     }
 
@@ -202,6 +211,8 @@ export class ChartAxis extends EventEmitter {
 
         if (element.animationId === animation.id) {
           element.animation = null;
+          element.animationId = null;
+          element.animationObject = null;
           element.state = AxisElementState.pending;
           element.opacity = 1;
         }
@@ -210,7 +221,11 @@ export class ChartAxis extends EventEmitter {
       this.detachAnimation( animation );
     };
 
-    const animation = new Tween(elements[0], 'opacity', 1, {
+    const animationObject = {
+      opacity: 0
+    };
+
+    const animation = new Tween(animationObject, 'opacity', 1, {
       duration: 250,
       timingFunction: 'easeInOutQuad'
     });
@@ -218,9 +233,13 @@ export class ChartAxis extends EventEmitter {
     animation.start();
 
     for (let i = 0; i < elements.length; ++i) {
-      elements[i].animation = animation;
-      elements[i].animationId = animation.id;
-      elements[i].state = AxisElementState.showing;
+      const element = elements[ i ];
+      element.animation = animation;
+      element.animationId = animation.id;
+      element.animationObject = animationObject;
+      element.startOpacity = element.startOpacity || 0;
+      element.opacityScale = 1 - element.startOpacity;
+      element.state = AxisElementState.showing;
     }
 
     this.hasActiveAnimations = true;
@@ -239,7 +258,10 @@ export class ChartAxis extends EventEmitter {
 
         if (element.animationId === animation.id) {
           element.animation = null;
+          element.animationId = null;
+          element.animationObject = null;
           element.state = AxisElementState.pending;
+          element.opacity = 0;
 
           this.detachElement( element );
         }
@@ -248,7 +270,11 @@ export class ChartAxis extends EventEmitter {
       this.detachAnimation( animation );
     };
 
-    const animation = new Tween(elements[0], 'opacity', 0, {
+    const animationObject = {
+      opacity: 1
+    };
+
+    const animation = new Tween(animationObject, 'opacity', 0, {
       duration: 250,
       timingFunction: 'easeInOutQuad'
     });
@@ -257,9 +283,13 @@ export class ChartAxis extends EventEmitter {
     animation.start();
 
     for (let i = 0; i < elements.length; ++i) {
-      elements[i].animation = animation;
-      elements[i].animationId = animation.id;
-      elements[i].state = AxisElementState.hiding;
+      const element = elements[ i ];
+      element.animation = animation;
+      element.animationId = animation.id;
+      element.animationObject = animationObject;
+      element.startOpacity = element.startOpacity || 1;
+      element.opacityScale = element.startOpacity;
+      element.state = AxisElementState.hiding;
     }
 
     this.hasActiveAnimations = true;

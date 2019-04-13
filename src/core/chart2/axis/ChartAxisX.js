@@ -1,5 +1,5 @@
 import { AxisElementState, ChartAxis } from './ChartAxis';
-import { setAttributeNS, zeroFill } from '../../../utils';
+import { clampNumber, setAttributeNS, zeroFill } from '../../../utils';
 
 let AUTOINCREMENT_ID = 1;
 
@@ -47,7 +47,14 @@ export class ChartAxisX extends ChartAxis {
     for (let i = 0; i < this.elements.length; ++i) {
       const element = this.elements[ i ];
       const animation = element.animation;
-      const opacity = animation && animation.currentFirstValue || ( element.state === AxisElementState.pending ? 1 : 0 );
+      const hasAnimation = !!animation;
+      const isShowing = hasAnimation ? element.state === AxisElementState.showing : false;
+      const opacity = hasAnimation
+        ? (isShowing
+            ? element.startOpacity + element.animationObject.opacity * element.opacityScale
+            : element.animationObject.opacity * element.opacityScale
+        )
+        : element.opacity;
       const x = this._computeValuePosition( this.axesValuesMapping[ element.value ] );
 
       context.globalAlpha = textColorAlpha * opacity;
@@ -130,6 +137,7 @@ export class ChartAxisX extends ChartAxis {
       value,
       formattedValue,
       opacity: 0,
+      startOpacity: 0,
       animation: null,
       animationId: null,
       state: AxisElementState.showing

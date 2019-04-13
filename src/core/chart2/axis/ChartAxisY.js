@@ -58,8 +58,14 @@ export class ChartAxisY extends ChartAxis {
     for (let i = 0; i < this.elements.length; ++i) {
       const element = this.elements[ i ];
       const animation = element.animation;
-      const opacity = animation && animation.currentFirstValue || ( element.state === AxisElementState.pending ? 1 : 0 );
-      // console.log( 'opacity', animation && animation.currentFirstValue );
+      const hasAnimation = !!animation;
+      const isShowing = hasAnimation ? element.state === AxisElementState.showing : false;
+      const opacity = hasAnimation
+        ? (isShowing
+            ? element.startOpacity + element.animationObject.opacity * element.opacityScale
+            : element.animationObject.opacity * element.opacityScale
+        )
+        : element.opacity;
       const y = this._computeValuePosition( element.value );
 
       context.globalAlpha = textColorAlpha * opacity * ( this.isDoubleAxis ? line.opacity : 1 );
@@ -109,6 +115,7 @@ export class ChartAxisY extends ChartAxis {
       value, //: this._roundValue( value ),
       formattedValue: this._formatNumber( value ),
       opacity: 0,
+      startOpacity: 0,
       animation: null,
       animationId: null,
       state: AxisElementState.showing

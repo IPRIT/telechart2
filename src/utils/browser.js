@@ -61,7 +61,7 @@ export function isTransformSupported () {
 export function getDevicePixelRatio (sampling = 1.25) {
   const min = 1;
   const dpr = window.devicePixelRatio || min;
-  return dpr >= 1.25
+  return dpr > 1.25
     ? min + ( dpr - min ) / sampling
     : dpr;
 }
