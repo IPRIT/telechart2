@@ -194,4 +194,3 @@ export class ChartAxisX extends ChartAxis {
     return base;
   }
 }
-
