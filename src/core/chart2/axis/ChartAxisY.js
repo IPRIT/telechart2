@@ -1,6 +1,8 @@
 import { AxisElementState, ChartAxis } from './ChartAxis';
 import { ensureNumber } from '../../../utils';
 
+let AUTOINCREMENT_ID = 1;
+
 export class ChartAxisY extends ChartAxis {
 
   /**
@@ -55,13 +57,16 @@ export class ChartAxisY extends ChartAxis {
 
     for (let i = 0; i < this.elements.length; ++i) {
       const element = this.elements[ i ];
+      const animation = element.animation;
+      const opacity = animation && animation.currentFirstValue || ( element.state === AxisElementState.pending ? 1 : 0 );
+      // console.log( 'opacity', animation && animation.currentFirstValue );
       const y = this._computeValuePosition( element.value );
 
-      context.globalAlpha = textColorAlpha * element.opacity * ( this.isDoubleAxis ? line.opacity : 1 );
+      context.globalAlpha = textColorAlpha * opacity * ( this.isDoubleAxis ? line.opacity : 1 );
       context.fillText(element.formattedValue, x, y - 5);
 
       if (drawAxes) {
-        context.globalAlpha = axesColorAlpha * element.opacity;
+        context.globalAlpha = axesColorAlpha * opacity;
         context.beginPath();
         context.moveTo(x, y);
         context.lineTo(x + axisWidth, y);
@@ -100,10 +105,12 @@ export class ChartAxisY extends ChartAxis {
    */
   initializeWrapper (value) {
     return {
+      id: AUTOINCREMENT_ID++,
       value, //: this._roundValue( value ),
       formattedValue: this._formatNumber( value ),
       opacity: 0,
       animation: null,
+      animationId: null,
       state: AxisElementState.showing
     };
   }
@@ -116,7 +123,7 @@ export class ChartAxisY extends ChartAxis {
     const yScaled = this.chart.isYScaled;
 
     return yScaled
-      ? this.chart._series[ 0 ].color
+      ? this.chart.series[ 0 ].color
       : this.textColor;
   }
 
@@ -132,7 +139,7 @@ export class ChartAxisY extends ChartAxis {
     const yScaled = this.chart.isYScaled;
 
     return yScaled
-      ? this.chart._series[ 1 ].color
+      ? this.chart.series[ 1 ].color
       : this.textColor;
   }
 

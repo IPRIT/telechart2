@@ -9,7 +9,7 @@ import {
   addClass,
   ChartThemes,
   ChartVariables, clampNumber,
-  createElement, cssText, getDevicePixelRatio, getElementOffset,
+  createElement, cssText, DprSampling, getDevicePixelRatio, getElementOffset,
   getElementWidth, interpolateThemeClass,
   isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported, passiveIfSupported, removeClass,
   resolveElement, setAttributes, throttle
@@ -188,6 +188,13 @@ export class TelechartApi extends EventEmitter {
 
     this._sendMainCanvasEventThrottled = throttle( this._sendMainCanvasEvent.bind( this ), 10 );
     this._sendNavUICanvasEventThrottled = this._sendNavUICanvasEvent.bind( this );
+  }
+
+  tick (deltaTime) {
+    if (this.telechart) {
+      this.telechart.update( deltaTime );
+      this.telechart.render();
+    }
   }
 
   /**
@@ -380,7 +387,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.mainCanvasHeight = ChartVariables.mainMaxHeight;
 
-    const devicePixelRatio = getDevicePixelRatio();
+    const devicePixelRatio = getDevicePixelRatio( DprSampling.main );
 
     setAttributes(canvas, {
       style: cssText({
@@ -404,7 +411,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.axisCanvasHeight = ChartVariables.mainMaxHeight;
 
-    const devicePixelRatio = getDevicePixelRatio();
+    const devicePixelRatio = getDevicePixelRatio( DprSampling.axis );
 
     setAttributes(canvas, {
       style: cssText({
@@ -428,7 +435,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.uiCanvasHeight = ChartVariables.mainMaxHeight;
 
-    const devicePixelRatio = getDevicePixelRatio();
+    const devicePixelRatio = getDevicePixelRatio( DprSampling.ui );
 
     setAttributes(canvas, {
       style: cssText({
@@ -452,7 +459,7 @@ export class TelechartApi extends EventEmitter {
     ) - 24; // left + right padding
     this.navigationSeriesCanvasHeight = ChartVariables.navigationChartHeight;
 
-    const devicePixelRatio = getDevicePixelRatio();
+    const devicePixelRatio = getDevicePixelRatio( DprSampling.navSeries );
 
     setAttributes(canvas, {
       style: cssText({
@@ -476,7 +483,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.navigationUICanvasHeight = ChartVariables.navigationChartUIHeight;
 
-    const devicePixelRatio = getDevicePixelRatio();
+    const devicePixelRatio = getDevicePixelRatio( DprSampling.navUI );
 
     setAttributes(canvas, {
       style: cssText({
@@ -511,31 +518,33 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _getEnvironmentOptions () {
-    const devicePixelRatio = getDevicePixelRatio();
-
     const canvasOffset = getElementOffset( this.mainCanvas );
     const canvasWidth = this.mainCanvasWidth;
     const canvasHeight = this.mainCanvasHeight;
+    const canvasDpr = getDevicePixelRatio( DprSampling.main );
 
     const axisCanvasOffset = getElementOffset( this.axisCanvas );
     const axisCanvasWidth = this.axisCanvasWidth;
     const axisCanvasHeight = this.axisCanvasHeight;
+    const axisCanvasDpr = getDevicePixelRatio( DprSampling.axis );
 
     const uiCanvasOffset = getElementOffset( this.uiCanvas );
     const uiCanvasWidth = this.uiCanvasWidth;
     const uiCanvasHeight = this.uiCanvasHeight;
+    const uiCanvasDpr = getDevicePixelRatio( DprSampling.ui );
 
     const navigationSeriesCanvasOffset = getElementOffset( this.navigationSeriesCanvas );
     const navigationSeriesCanvasWidth = this.navigationSeriesCanvasWidth;
     const navigationSeriesCanvasHeight = this.navigationSeriesCanvasHeight;
+    const navigationSeriesCanvasDpr = getDevicePixelRatio( DprSampling.navSeries );
 
     const navigationUICanvasOffset = getElementOffset( this.navigationUICanvas );
     const navigationUICanvasWidth = this.navigationUICanvasWidth;
     const navigationUICanvasHeight = this.navigationUICanvasHeight;
+    const navigationUICanvasDpr = getDevicePixelRatio( DprSampling.navUI );
 
     return {
       // system
-      devicePixelRatio,
       isTouchEventsSupported: isTouchEventsSupported(),
       isTransformSupported: isTransformSupported(),
 
@@ -543,26 +552,31 @@ export class TelechartApi extends EventEmitter {
       canvasOffset,
       canvasWidth,
       canvasHeight,
+      canvasDpr,
 
       // axis canvas
       axisCanvasOffset,
       axisCanvasWidth,
       axisCanvasHeight,
+      axisCanvasDpr,
 
       // axis canvas
       uiCanvasOffset,
       uiCanvasWidth,
       uiCanvasHeight,
+      uiCanvasDpr,
 
       // navigation canvas series
       navigationSeriesCanvasOffset,
       navigationSeriesCanvasWidth,
       navigationSeriesCanvasHeight,
+      navigationSeriesCanvasDpr,
 
       // navigation canvas UI
       navigationUICanvasOffset,
       navigationUICanvasWidth,
       navigationUICanvasHeight,
+      navigationUICanvasDpr,
     };
   }
 
@@ -1074,7 +1088,7 @@ export class TelechartApi extends EventEmitter {
     const rightBorderOffsetX = realWidth * max - borderWidth / 2;
 
     const leftMinX = leftBorderOffsetX - borderTapArea;
-    const leftMaxX = leftBorderOffsetX + borderTapArea / 2;
+    const leftMaxX = leftBorderOffsetX + borderTapArea / 1.5;
 
     const wrapComponent = component => {
       return {
@@ -1087,7 +1101,7 @@ export class TelechartApi extends EventEmitter {
       return wrapComponent( NavUIComponent.SLIDER.LEFT_BORDER );
     }
 
-    const rightMinX = rightBorderOffsetX - borderTapArea / 2;
+    const rightMinX = rightBorderOffsetX - borderTapArea / 1.5;
     const rightMaxX = rightBorderOffsetX + borderTapArea;
 
     if (rightMinX <= cursorX && cursorX <= rightMaxX) {

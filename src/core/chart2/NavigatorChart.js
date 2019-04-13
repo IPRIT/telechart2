@@ -153,9 +153,13 @@ export class NavigatorChart extends BaseChart {
     const context = this.telechart.navigationSeriesContext;
     context.clearRect( 0, 0, this.chartWidth, this.chartHeight );
 
-    this.eachSeries(line => {
-      line.render( context );
-    });
+    context.lineWidth = 1;
+    context.lineJoin = 'bevel';
+    context.lineCap = 'butt';
+
+    for (let i = 0, len = this.series.length; i < len; ++i) {
+      this.series[ i ].render( context );
+    }
   }
 
   redrawSliderUI () {

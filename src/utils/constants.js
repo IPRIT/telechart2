@@ -35,3 +35,11 @@ export const ChartVariables = {
 
   initialViewportScale: .25
 };
+
+export const DprSampling = {
+  main: 1.75,
+  axis: 1.2,
+  ui: 1,
+  navSeries: 2.1,
+  navUI: 1
+};

@@ -197,58 +197,63 @@ export class Telechart2 extends EventEmitter {
    */
   setEnvironmentOptions (options = {}) {
     const {
-      devicePixelRatio = 1,
-
       // main canvas
       canvasOffset,
       canvasWidth,
       canvasHeight,
+      canvasDpr,
 
       // axis canvas
       axisCanvasOffset,
       axisCanvasWidth,
       axisCanvasHeight,
-
+      axisCanvasDpr,
 
       // ui canvas
       uiCanvasOffset,
       uiCanvasWidth,
       uiCanvasHeight,
+      uiCanvasDpr,
 
       // navigation canvas series
       navigationSeriesCanvasOffset,
       navigationSeriesCanvasWidth,
       navigationSeriesCanvasHeight,
+      navigationSeriesCanvasDpr,
 
       // navigation canvas UI
       navigationUICanvasOffset,
       navigationUICanvasWidth,
-      navigationUICanvasHeight
+      navigationUICanvasHeight,
+      navigationUICanvasDpr,
     } = options;
 
     this.environmentOptions = options;
 
-    this.devicePixelRatio = devicePixelRatio;
-
     this.canvasOffset = canvasOffset;
     this.canvasWidth = canvasWidth;
     this.canvasHeight = canvasHeight;
+    this.canvasDpr = canvasDpr;
 
     this.axisCanvasOffset = axisCanvasOffset;
     this.axisCanvasWidth = axisCanvasWidth;
     this.axisCanvasHeight = axisCanvasHeight;
+    this.axisCanvasDpr = axisCanvasDpr;
 
     this.uiCanvasOffset = uiCanvasOffset;
     this.uiCanvasWidth = uiCanvasWidth;
     this.uiCanvasHeight = uiCanvasHeight;
+    this.uiCanvasDpr = uiCanvasDpr;
 
     this.navigationSeriesCanvasOffset = navigationSeriesCanvasOffset;
     this.navigationSeriesCanvasWidth = navigationSeriesCanvasWidth;
     this.navigationSeriesCanvasHeight = navigationSeriesCanvasHeight;
+    this.navigationSeriesCanvasDpr = navigationSeriesCanvasDpr;
 
     this.navigationUICanvasOffset = navigationUICanvasOffset;
     this.navigationUICanvasWidth = navigationUICanvasWidth;
     this.navigationUICanvasHeight = navigationUICanvasHeight;
+    this.navigationUICanvasDpr = navigationUICanvasDpr;
 
     if (this.mainContext) {
       this.updateContexts();
@@ -316,7 +321,9 @@ export class Telechart2 extends EventEmitter {
     // create animation loop
     this._clock = new Clock();
 
-    this.nextFrame();
+    if (isWorker) {
+      this.nextFrame();
+    }
   }
 
   /**
@@ -324,7 +331,6 @@ export class Telechart2 extends EventEmitter {
    */
   nextFrame () {
     const deltaTime = this._clock.getDelta();
-    // this._animationSource.update( deltaTime );
 
     // update context
     this.update( deltaTime );
@@ -391,20 +397,20 @@ export class Telechart2 extends EventEmitter {
 
   updateContexts () {
     if (isWorker) {
-      this.mainCanvas.width = this.canvasWidth * this.devicePixelRatio;
-      this.mainCanvas.height = this.canvasHeight * this.devicePixelRatio;
+      this.mainCanvas.width = this.canvasWidth * this.canvasDpr;
+      this.mainCanvas.height = this.canvasHeight * this.canvasDpr;
 
-      this.axisCanvas.width = this.axisCanvasWidth * this.devicePixelRatio;
-      this.axisCanvas.height = this.axisCanvasHeight * this.devicePixelRatio;
+      this.axisCanvas.width = this.axisCanvasWidth * this.axisCanvasDpr;
+      this.axisCanvas.height = this.axisCanvasHeight * this.axisCanvasDpr;
 
-      this.uiCanvas.width = this.uiCanvasWidth * this.devicePixelRatio;
-      this.uiCanvas.height = this.uiCanvasHeight * this.devicePixelRatio;
+      this.uiCanvas.width = this.uiCanvasWidth * this.uiCanvasDpr;
+      this.uiCanvas.height = this.uiCanvasHeight * this.uiCanvasDpr;
 
-      this.navigationSeriesCanvas.width = this.navigationSeriesCanvasWidth * this.devicePixelRatio;
-      this.navigationSeriesCanvas.height = this.navigationSeriesCanvasHeight * this.devicePixelRatio;
+      this.navigationSeriesCanvas.width = this.navigationSeriesCanvasWidth * this.navigationSeriesCanvasDpr;
+      this.navigationSeriesCanvas.height = this.navigationSeriesCanvasHeight * this.navigationSeriesCanvasDpr;
 
-      this.navigationUICanvas.width = this.navigationUICanvasWidth * this.devicePixelRatio;
-      this.navigationUICanvas.height = this.navigationUICanvasHeight * this.devicePixelRatio;
+      this.navigationUICanvas.width = this.navigationUICanvasWidth * this.navigationUICanvasDpr;
+      this.navigationUICanvas.height = this.navigationUICanvasHeight * this.navigationUICanvasDpr;
     }
 
     this.updateContextsScale();
@@ -412,11 +418,11 @@ export class Telechart2 extends EventEmitter {
 
   updateContextsScale () {
     // downscale to provide hidpi picture
-    this.mainContext.scale( this.devicePixelRatio, this.devicePixelRatio );
-    this.axisContext.scale( this.devicePixelRatio, this.devicePixelRatio );
-    this.uiContext.scale( this.devicePixelRatio, this.devicePixelRatio );
-    this.navigationSeriesContext.scale( this.devicePixelRatio, this.devicePixelRatio );
-    this.navigationUIContext.scale( this.devicePixelRatio, this.devicePixelRatio );
+    this.mainContext.scale( this.canvasDpr, this.canvasDpr );
+    this.axisContext.scale( this.axisCanvasDpr, this.axisCanvasDpr );
+    this.uiContext.scale( this.uiCanvasDpr, this.uiCanvasDpr );
+    this.navigationSeriesContext.scale( this.navigationSeriesCanvasDpr, this.navigationSeriesCanvasDpr );
+    this.navigationUIContext.scale( this.navigationUICanvasDpr, this.navigationUICanvasDpr );
   }
 
   initializeButtons () {
@@ -526,7 +532,7 @@ export class Telechart2 extends EventEmitter {
    * @private
    */
   _getLines () {
-    return this._chart._series.map(line => {
+    return this._chart.series.map(line => {
       return {
         color: line.color,
         name: line.name,

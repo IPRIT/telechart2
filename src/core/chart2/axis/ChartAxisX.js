@@ -1,6 +1,8 @@
 import { AxisElementState, ChartAxis } from './ChartAxis';
 import { setAttributeNS, zeroFill } from '../../../utils';
 
+let AUTOINCREMENT_ID = 1;
+
 export class ChartAxisX extends ChartAxis {
 
   /**
@@ -44,9 +46,11 @@ export class ChartAxisX extends ChartAxis {
 
     for (let i = 0; i < this.elements.length; ++i) {
       const element = this.elements[ i ];
+      const animation = element.animation;
+      const opacity = animation && animation.currentFirstValue || ( element.state === AxisElementState.pending ? 1 : 0 );
       const x = this._computeValuePosition( this.axesValuesMapping[ element.value ] );
 
-      context.globalAlpha = textColorAlpha * element.opacity;
+      context.globalAlpha = textColorAlpha * opacity;
       context.fillText(element.formattedValue, x, y);
     }
   }
@@ -122,10 +126,12 @@ export class ChartAxisX extends ChartAxis {
     formattedValue = [ parts[0], parts[1] ].join( ' ' );
 
     return {
+      id: AUTOINCREMENT_ID++,
       value,
       formattedValue,
       opacity: 0,
       animation: null,
+      animationId: null,
       state: AxisElementState.showing
     };
   }

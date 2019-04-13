@@ -212,9 +212,6 @@ export class Series extends EventEmitter {
   drawPathByInterval (context, interval, step = 1) {
     context.globalAlpha = this.opacity;
     context.strokeStyle = this._color;
-    context.lineWidth = this.strokeWidth;
-    context.lineJoin = 'bevel';
-    context.lineCap = 'butt';
     context.beginPath();
 
     this._drawPathToContext( context, interval, step );

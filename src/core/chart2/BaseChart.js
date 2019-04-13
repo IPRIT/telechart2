@@ -1,4 +1,3 @@
-import { TelechartWorkerEvents } from '../worker/worker-events';
 import { EventEmitter } from '../misc/EventEmitter';
 import { SeriesTypes } from '../series/SeriesTypes';
 import { Series } from '../series/Series';
@@ -58,9 +57,8 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {Array<Series>}
-   * @private
    */
-  _series = [];
+  series = [];
 
   /**
    * @type {Array<number>}
@@ -433,7 +431,7 @@ export class BaseChart extends EventEmitter {
       const series = new Series( this, settings );
       series.initialize();
 
-      this._series.push( series );
+      this.series.push( series );
     }
   }
 
@@ -854,9 +852,9 @@ export class BaseChart extends EventEmitter {
     } else {
       let isSingleVisible = true;
 
-      for (let i = 0; i < this._series.length; ++i) {
-        if (this._series[ i ].isVisible
-          && this._series[ i ].label !== label) {
+      for (let i = 0; i < this.series.length; ++i) {
+        if (this.series[ i ].isVisible
+          && this.series[ i ].label !== label) {
           isSingleVisible = false;
           break;
         }
@@ -889,9 +887,9 @@ export class BaseChart extends EventEmitter {
    * @return {Series}
    */
   findSeries (predicate) {
-    for (let i = 0; i < this._series.length; ++i) {
-      if (predicate( this._series[ i ] )) {
-        return this._series[ i ];
+    for (let i = 0; i < this.series.length; ++i) {
+      if (predicate( this.series[ i ] )) {
+        return this.series[ i ];
       }
     }
   }
@@ -900,8 +898,8 @@ export class BaseChart extends EventEmitter {
    * @param {Function} fn
    */
   eachSeries (fn = () => {}) {
-    for (let i = 0; i < this._series.length; ++i) {
-      fn( this._series[ i ], i );
+    for (let i = 0; i < this.series.length; ++i) {
+      fn( this.series[ i ], i );
     }
   }
 
@@ -1124,13 +1122,6 @@ export class BaseChart extends EventEmitter {
    */
   get seriesOffsetBottom () {
     return ChartVariables.mainChartOffsetBottom;
-  }
-
-  /**
-   * @return {Array<Series>}
-   */
-  get series () {
-    return this._series;
   }
 
   /**

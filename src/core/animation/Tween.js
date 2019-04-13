@@ -177,7 +177,7 @@ export class Tween extends EventEmitter {
    * @param {Array<number>} targetValues
    */
   patchAnimation (targetValues = []) {
-    this._targetValues = targetValues;
+    this._targetValues = [].concat( targetValues );
     this._startValues = this._getPropertyValues( this._properties );
     this._timeElapsed = 0;
   }
@@ -264,6 +264,13 @@ export class Tween extends EventEmitter {
    */
   get progress () {
     return Math.min( 1, Math.max( 0, this._timeElapsed / this._duration ) );
+  }
+
+  /**
+   * @return {number}
+   */
+  get currentFirstValue () {
+    return this._target[ this._properties[ 0 ] ];
   }
 
   /**

@@ -89,12 +89,15 @@ export class Chart extends BaseChart {
 
   redrawChart () {
     const context = this.telechart.mainContext;
-
     context.clearRect( 0, 0, this.chartWidth, ChartVariables.mainMaxHeight );
 
-    this.eachSeries(line => {
-      line.render();
-    });
+    context.lineWidth = 2;
+    context.lineJoin = 'bevel';
+    context.lineCap = 'butt';
+
+    for (let i = 0, len = this.series.length; i < len; ++i) {
+      this.series[ i ].render( context );
+    }
   }
 
   redrawUIOverlay () {

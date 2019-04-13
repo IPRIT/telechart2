@@ -1,5 +1,6 @@
 import '../src/style/telechart.scss';
 
+import { Clock } from '../src/core/misc/Clock';
 import { TelechartApi } from '../src/core/api/TelechartApi';
 import { ChartThemes } from '../src/utils/themes';
 
@@ -41,6 +42,8 @@ for (let i = 4; i < sources.length; ++i) {
   const source = sources[ i ];
   createChart( source, i );
 }
+
+startAnimating();
 
 updatePageTheme();
 
@@ -151,4 +154,20 @@ function createChart (sourceData, index) {
   console.log( `#${index}`, performance.now() - start, api );
 
   apis.push( api );
+}
+
+
+function startAnimating () {
+  window.myClock = new Clock();
+  animate();
+}
+
+function animate () {
+  let deltaMs = window.myClock.getDelta();
+
+  for (let i = 0, len = apis.length; i < len; ++i) {
+    apis[ i ].tick( deltaMs );
+  }
+
+  requestAnimationFrame( animate );
 }

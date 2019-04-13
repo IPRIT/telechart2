@@ -33,6 +33,11 @@ export class ChartAxis extends EventEmitter {
   elements = [];
 
   /**
+   * @type {Array}
+   */
+  animations = [];
+
+  /**
    * @type {boolean}
    */
   updateAnimationsNeeded = false;
@@ -98,9 +103,10 @@ export class ChartAxis extends EventEmitter {
   animationTick (deltaTime) {
     let hasAnimations = false;
 
-    for (let i = 0; i < this.elements.length; ++i) {
-      if (this.elements[ i ].animation) {
-        this.elements[ i ].animation.update( deltaTime );
+    for (let i = 0; i < this.animations.length; ++i) {
+      const animation = this.animations[ i ];
+      if (animation && animation.isRunning) {
+        animation.update( deltaTime );
         this.redrawNeeded = true;
         hasAnimations = true;
       }
@@ -119,42 +125,37 @@ export class ChartAxis extends EventEmitter {
       return oldValues.indexOf( value ) === -1;
     });
 
+    const perf = performance.now();
     this.createNewElements( valuesToCreate );
     this.deleteOldElements( valuesToDelete );
+    // console.log( performance.now() - perf );
   }
 
   /**
    * @param valuesToCreate
    */
   createNewElements (valuesToCreate) {
+    let elements = [];
+
     for (let i = 0; i < valuesToCreate.length; ++i) {
-      const value = valuesToCreate[ i ];
-      let element = this._getElementByValue( value );
-      let created = false;
+      let element = this._getElementByValue( valuesToCreate[ i ] );
 
-      if (element) {
-        if (element.state === AxisElementState.pending) {
-          // already attached
-          continue;
-        }
-
-        if (element.state === AxisElementState.hiding) {
-          if (element.animation) {
-            element.animation.cancel();
-          }
-        }
+      if (element
+        && element.state === AxisElementState.showing) {
+        continue;
       }
 
       if (!element) {
-        element = this.initializeWrapper( value );
-        created = true;
-      }
-
-      this.createShowingAnimation( element );
-
-      if (created) {
+        element = this.initializeWrapper( valuesToCreate[ i ] );
         this.elements.push( element );
       }
+
+      elements.push( element );
+    }
+
+    if (elements.length) {
+      const animation = this.createShowingAnimation( elements );
+      this.animations.push( animation );
     }
   }
 
@@ -169,9 +170,10 @@ export class ChartAxis extends EventEmitter {
    * @param valuesToDelete
    */
   deleteOldElements (valuesToDelete) {
+    let elements = [];
+
     for (let i = 0; i < valuesToDelete.length; ++i) {
-      const value = valuesToDelete[ i ];
-      let element = this._getElementByValue( value );
+      let element = this._getElementByValue( valuesToDelete[ i ] );
 
       if (!element
         || element.state === AxisElementState.hiding) {
@@ -179,54 +181,74 @@ export class ChartAxis extends EventEmitter {
         continue;
       }
 
-      if (element.state === AxisElementState.showing) {
-        const { animation: showing } = element;
-        showing && showing.cancel();
+      elements.push( element );
+    }
+
+    if (elements.length) {
+      const animation = this.createHidingAnimation( elements );
+
+      this.animations.push( animation );
+    }
+  }
+
+  /**
+   * @param {*} elements
+   * @return {Tween}
+   */
+  createShowingAnimation (elements) {
+    const onComplete = _ => {
+      for (let i = 0; i < elements.length; ++i) {
+        const element = elements[ i ];
+
+        if (element.animationId === animation.id) {
+          element.animation = null;
+          element.state = AxisElementState.pending;
+          element.opacity = 1;
+        }
       }
 
-      this.createHidingAnimation( element );
-    }
-  }
-
-  /**
-   * @param {*} element
-   * @return {number}
-   */
-  createShowingAnimation (element) {
-    if (element.opacity === 1) {
-      return ( element.state = AxisElementState.pending );
-    }
-
-    const onComplete = _ => {
-      element.animation = null;
-      element.state = AxisElementState.pending;
+      this.detachAnimation( animation );
     };
 
-    const animation = new Tween(element, 'opacity', 1, {
+    const animation = new Tween(elements[0], 'opacity', 1, {
       duration: 250,
       timingFunction: 'easeInOutQuad'
     });
     animation.on( TweenEvents.COMPLETE, onComplete );
     animation.start();
 
-    element.animation = animation;
-    element.state = AxisElementState.showing;
+    for (let i = 0; i < elements.length; ++i) {
+      elements[i].animation = animation;
+      elements[i].animationId = animation.id;
+      elements[i].state = AxisElementState.showing;
+    }
 
     this.hasActiveAnimations = true;
+
+    return animation;
   }
 
   /**
-   * @param {*} element
+   * @param {*} elements
+   * @return {Tween}
    */
-  createHidingAnimation (element) {
+  createHidingAnimation (elements) {
     const onComplete = _ => {
-      element.animation = null;
-      element.state = AxisElementState.pending;
+      for (let i = 0; i < elements.length; ++i) {
+        const element = elements[ i ];
 
-      this.detachElement( element );
+        if (element.animationId === animation.id) {
+          element.animation = null;
+          element.state = AxisElementState.pending;
+
+          this.detachElement( element );
+        }
+      }
+
+      this.detachAnimation( animation );
     };
 
-    const animation = new Tween(element, 'opacity', 0, {
+    const animation = new Tween(elements[0], 'opacity', 0, {
       duration: 250,
       timingFunction: 'easeInOutQuad'
     });
@@ -234,20 +256,31 @@ export class ChartAxis extends EventEmitter {
     animation.on( TweenEvents.COMPLETE, onComplete );
     animation.start();
 
-    element.animation = animation;
-    element.state = AxisElementState.hiding;
+    for (let i = 0; i < elements.length; ++i) {
+      elements[i].animation = animation;
+      elements[i].animationId = animation.id;
+      elements[i].state = AxisElementState.hiding;
+    }
 
     this.hasActiveAnimations = true;
+
+    return animation;
   }
 
   /**
-   * @param {{state: *, value: *, valueElement: Element, axisElement: Element}} element
+   * @param {{state: *, value: *, id: number, animation: Tween}} element
    */
   detachElement (element) {
-    const { value } = element;
-    const indexToDelete = this._getElementIndexByValue( value );
-
+    const indexToDelete = this._getElementIndexById( element.id );
     this.elements.splice( indexToDelete, 1 );
+  }
+
+  /**
+   * @param {Tween} animation
+   */
+  detachAnimation (animation) {
+    const indexToDelete = this._getAnimationIndexById( animation.id );
+    this.animations.splice( indexToDelete, 1 );
   }
 
   initializeWrappers () {
@@ -302,7 +335,7 @@ export class ChartAxis extends EventEmitter {
 
   /**
    * @param value
-   * @return {{state: *, value: *, valueElement: Element, axisElement: Element}}
+   * @return {{animation: Tween, state: number, value: *, opacity: number}}
    * @private
    */
   _getElementByValue (value) {
@@ -322,6 +355,36 @@ export class ChartAxis extends EventEmitter {
   _getElementIndexByValue (value) {
     for (let i = 0; i < this.elements.length; ++i) {
       if (value === this.elements[ i ].value) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  /**
+   * @param id
+   * @return {number}
+   * @private
+   */
+  _getElementIndexById (id) {
+    for (let i = 0; i < this.elements.length; ++i) {
+      if (id === this.elements[ i ].id) {
+        return i;
+      }
+    }
+
+    return -1;
+  }
+
+  /**
+   * @param id
+   * @return {number}
+   * @private
+   */
+  _getAnimationIndexById (id) {
+    for (let i = 0; i < this.animations.length; ++i) {
+      if (id === this.animations[ i ].id) {
         return i;
       }
     }
