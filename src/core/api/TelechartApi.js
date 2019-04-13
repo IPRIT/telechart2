@@ -186,8 +186,8 @@ export class TelechartApi extends EventEmitter {
   initialize () {
     this.addEventListeners();
 
-    this._sendMainCanvasEventThrottled = throttle( this._sendMainCanvasEvent.bind( this ), 16 );
-    this._sendNavUICanvasEventThrottled = throttle( this._sendNavUICanvasEvent.bind( this ), 16 );
+    this._sendMainCanvasEventThrottled = throttle( this._sendMainCanvasEvent.bind( this ), 10 );
+    this._sendNavUICanvasEventThrottled = this._sendNavUICanvasEvent.bind( this );
   }
 
   /**
@@ -843,7 +843,12 @@ export class TelechartApi extends EventEmitter {
   }
 
   _attachNavigatorListeners () {
+    this.navigationUICanvas.addEventListener( 'touchstart', ev => this._onNavUICanvasTouchStart( ev ), passiveIfSupported( false ) );
+    this.navigationUICanvas.addEventListener( 'touchmove', ev => this._onNavUICanvasTouchMove( ev ), passiveIfSupported( false ) );
+    this.navigationUICanvas.addEventListener( 'touchend', ev => this._onNavUICanvasTouchEnd( ev ) );
+
     this.navigationUICanvas.addEventListener('mousedown', ev => this._onNavUICanvasMouseDown( ev ));
+    this.navigationUICanvas.addEventListener('mousemove', ev => this._onNavUICanvasMouseMove( ev ));
     this.navigationUICanvas.addEventListener('click', ev => this._onNavUICanvasClick( ev ));
 
     // worker events
@@ -885,19 +890,151 @@ export class TelechartApi extends EventEmitter {
 
   _onNavUICanvasMouseDown (ev) {
     // on mouse down
-    const result = this._detectNavUIComponent( ev );
-    console.log( result );
+    const { component } = this._detectNavUIComponent( ev );
+
+    this._currentNavComponent = component;
+
+    if (component === NavUIComponent.SLIDER.LEFT_BORDER
+      || component === NavUIComponent.SLIDER.RIGHT_BORDER) {
+      return this._onSliderControllerMouseDown( ev, component === NavUIComponent.SLIDER.LEFT_BORDER ? 'left' : 'right' );
+    }
+
+    if (component === NavUIComponent.SLIDER.INNER) {
+      return this._onSliderMouseDown( ev );
+    }
   }
 
   _onNavUICanvasMouseMove (ev) {
-    // on mouse move
+    let newCursor = null;
+
+    if (!this._navUIDragStarted) {
+      const cursorAttrs = (cursor = 'default') => {
+        return {
+          style: `cursor: ${cursor}`
+        };
+      };
+
+      const oldCursor = this.currentNavCursor;
+
+      const { component } = this._detectNavUIComponent( ev );
+
+      if (component === NavUIComponent.SLIDER.LEFT_BORDER
+        || component === NavUIComponent.SLIDER.RIGHT_BORDER) {
+        newCursor = 'e-resize';
+      }
+
+      if (component === NavUIComponent.SLIDER.INNER) {
+        newCursor = 'grab';
+      }
+
+      if (component === NavUIComponent.OVERLAY.LEFT
+        || component === NavUIComponent.OVERLAY.RIGHT) {
+        newCursor = 'pointer';
+      }
+
+      if (newCursor !== oldCursor) {
+        if (newCursor === 'grab') {
+          addClass( this.navigatorRoot, 'grabbable' );
+          setAttributes( this.navigatorRoot, { style: '' } );
+        } else {
+          removeClass( this.navigatorRoot, 'grabbable' );
+          setAttributes( this.navigatorRoot, cursorAttrs( newCursor ) );
+        }
+      }
+    }
+
+    if (!newCursor) {
+      setAttributes( this.navigatorRoot, { style: '' } );
+      removeClass( this.navigatorRoot, 'grabbable' );
+    }
+
+    this.currentNavCursor = newCursor;
+  }
+
+  _onNavUICanvasTouchStart (ev) {
+    // on touch start
+
+    if (this._navUIDragStarted) {
+      return;
+    }
+    this._navUIDragStarted = true;
+
+    const {
+      pageX, pageY
+    } = ev.targetTouches[ 0 ];
+
+    this._sliderStartEvent = {
+      pageX, pageY
+    };
+
+    const { component } = this._detectNavUIComponent( ev );
+
+    this._currentNavComponent = component;
+
+    if (component === NavUIComponent.SLIDER.LEFT_BORDER
+      || component === NavUIComponent.SLIDER.RIGHT_BORDER) {
+      return this._onSliderControllerTouchStart( ev, component === NavUIComponent.SLIDER.LEFT_BORDER ? 'left' : 'right' );
+    }
+
+    if (component === NavUIComponent.SLIDER.INNER) {
+      return this._onSliderTouchStart( ev );
+    }
+  }
+
+  _onNavUICanvasTouchMove (ev) {
+    // on touch move
+
+    const targetTouch = ev.targetTouches[ 0 ];
+
+    if (this._isSliderScrollingAction === null) {
+      const {
+        pageX: startPageX,
+        pageY: startPageY
+      } = this._sliderStartEvent;
+
+      const deltaY = Math.abs( startPageY - targetTouch.pageY );
+      const deltaX = Math.abs( startPageX - targetTouch.pageX );
+
+      this._isSliderScrollingAction = deltaY >= deltaX;
+    }
+
+    if (!this._isSliderScrollingAction) {
+      ev.preventDefault();
+    }
+
+    const component = this._currentNavComponent;
+
+    if (component === NavUIComponent.SLIDER.LEFT_BORDER
+      || component === NavUIComponent.SLIDER.RIGHT_BORDER) {
+      return this._onSliderControllerTouchMove( ev );
+    }
+
+    if (component === NavUIComponent.SLIDER.INNER) {
+      return this._onSliderTouchMove( ev );
+    }
+  }
+
+  _onNavUICanvasTouchEnd (ev) {
+    // on touch end
+
+    if (ev.cancelable) {
+      ev.preventDefault();
+    }
+
+    this._isSliderScrollingAction = null;
+    this._currentNavComponent = null;
+    this._clearNavDragState();
   }
 
   _onNavUICanvasClick (ev) {
+    // on click
     const { component, scaledPosition } = this._detectNavUIComponent( ev );
+
+    this._currentNavComponent = component;
+
     if (component === NavUIComponent.OVERLAY.LEFT
       || component === NavUIComponent.OVERLAY.RIGHT) {
-      this._sendNavUICanvasEventThrottled( 'overlay.click', ev, [ scaledPosition ] );
+      return this._onSliderOverlayClick( ev, scaledPosition );
     }
   }
 
@@ -916,7 +1053,7 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _detectNavUIComponent (ev) {
-    const { pageX }  = this._getEventTouch( ev );
+    const { pageX } = this._getEventTouch( ev );
     const env = this.environmentOptions;
     const uiOffset = env.navigationUICanvasOffset;
     const uiWidth = env.navigationUICanvasWidth;
@@ -930,13 +1067,13 @@ export class TelechartApi extends EventEmitter {
     const scaledPosition = cursorX / realWidth;
 
     const borderWidth = 9;
-    const borderTapArea = borderWidth;
+    const borderTapArea = borderWidth * 1.5;
 
     const leftBorderOffsetX = realWidth * min + borderWidth / 2;
     const rightBorderOffsetX = realWidth * max - borderWidth / 2;
 
     const leftMinX = leftBorderOffsetX - borderTapArea;
-    const leftMaxX = leftBorderOffsetX + borderTapArea;
+    const leftMaxX = leftBorderOffsetX + borderTapArea / 2;
 
     const wrapComponent = component => {
       return {
@@ -949,7 +1086,7 @@ export class TelechartApi extends EventEmitter {
       return wrapComponent( NavUIComponent.SLIDER.LEFT_BORDER );
     }
 
-    const rightMinX = rightBorderOffsetX - borderTapArea;
+    const rightMinX = rightBorderOffsetX - borderTapArea / 2;
     const rightMaxX = rightBorderOffsetX + borderTapArea;
 
     if (rightMinX <= cursorX && cursorX <= rightMaxX) {
@@ -969,5 +1106,146 @@ export class TelechartApi extends EventEmitter {
     }
 
     return wrapComponent( 0 );
+  }
+
+  /**
+   * @param ev
+   * @param scaledPosition
+   * @private
+   */
+  _onSliderOverlayClick (ev, scaledPosition) {
+    if (this._navUIDragStarted) {
+      return;
+    }
+    // don't set drag state to true (!)
+
+    this._sendNavUICanvasEventThrottled( 'overlay.click', this._transferableEvent( ev ), [ scaledPosition ] );
+  }
+
+  /**
+   * @param ev
+   * @private
+   */
+  _onSliderMouseDown (ev) {
+    if (this._navUIDragStarted) {
+      return;
+    }
+    this._navUIDragStarted = true;
+
+    const mouseMoveListener = this._onSliderMouseMove.bind( this );
+
+    const lastBodyStyle = document.body.getAttribute( 'style' );
+    const styleAttr = {
+      style: cssText({
+        cursor: 'grabbing'
+      })
+    };
+
+    setAttributes( document.body, styleAttr );
+
+    document.addEventListener('mousemove', mouseMoveListener);
+    document.addEventListener('mouseup', ev => {
+      if (lastBodyStyle) {
+        setAttributes(document.body, { style: lastBodyStyle });
+      } else {
+        document.body.removeAttribute( 'style' );
+      }
+
+      document.removeEventListener( 'mousemove', mouseMoveListener );
+
+      // clear up current drag state
+      this._clearNavDragState();
+    });
+
+    this._sendNavUICanvasEventThrottled( 'slider.mousedown', this._transferableEvent( ev ) );
+  }
+
+  _onSliderMouseMove (ev) {
+    ev.preventDefault();
+
+    this._sendNavUICanvasEventThrottled( 'slider.mousemove', this._transferableEvent( ev ) );
+  }
+
+  _onSliderTouchStart (ev) {
+    this._sendNavUICanvasEventThrottled( 'slider.touchstart', this._transferableEvent( ev ) );
+  }
+
+  _onSliderTouchMove (ev) {
+    this._sendNavUICanvasEventThrottled( 'slider.touchmove', this._transferableEvent( ev ) );
+  }
+
+  /**
+   * @param ev
+   * @param direction
+   * @private
+   */
+  _onSliderControllerMouseDown (ev, direction) {
+    if (this._navUIDragStarted) {
+      return;
+    }
+    this._navUIDragStarted = true;
+
+    const mouseMoveListener = this._onSliderControllerMouseMove.bind( this );
+
+    const lastBodyStyle = document.body.getAttribute( 'style' );
+    const styleAttr = {
+      style: cssText({
+        cursor: 'e-resize'
+      })
+    };
+
+    setAttributes( document.body, styleAttr );
+
+    document.addEventListener('mousemove', mouseMoveListener);
+    document.addEventListener('mouseup', ev => {
+      if (lastBodyStyle) {
+        setAttributes(document.body, { style: lastBodyStyle });
+      } else {
+        document.body.removeAttribute( 'style' );
+      }
+
+      document.removeEventListener( 'mousemove', mouseMoveListener );
+
+      // clear up current drag state
+      this._clearNavDragState();
+    });
+
+    this._sendNavUICanvasEventThrottled( 'slider-controller.mousedown', this._transferableEvent( ev ), [ direction ] );
+  }
+
+  /**
+   * @param ev
+   * @private
+   */
+  _onSliderControllerMouseMove (ev) {
+    ev.preventDefault();
+
+    this._sendNavUICanvasEventThrottled( 'slider-controller.mousemove', this._transferableEvent( ev ) );
+  }
+
+  /**
+   * @param ev
+   * @param direction
+   * @private
+   */
+  _onSliderControllerTouchStart (ev, direction) {
+    this._sendNavUICanvasEventThrottled( 'slider-controller.touchstart', this._transferableEvent( ev ), [ direction ] );
+  }
+
+  _onSliderControllerTouchMove (ev) {
+    this._sendNavUICanvasEventThrottled( 'slider-controller.touchmove', this._transferableEvent( ev ) );
+  }
+
+  /**
+   * @private
+   */
+  _clearNavDragState (withDelay = true) {
+    if (!withDelay) {
+      return ( this._navUIDragStarted = false );
+    }
+
+    setTimeout(_ => {
+      this._navUIDragStarted = false;
+    }, 10);
   }
 }

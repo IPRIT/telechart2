@@ -558,6 +558,7 @@ export class BaseChart extends EventEmitter {
 
     if (this._xAxisView) {
       this._xAxisView.requestUpdateAnimations();
+      this._xAxisView.requestRedraw();
     }
 
     this.emit( ChartEvents.REDRAW_CURSOR );

@@ -90,6 +90,8 @@ export class DataLabel extends EventEmitter {
 
   hasArrow = true;
 
+  isUpdating = false;
+
   constructor (root) {
     super();
 
@@ -99,12 +101,15 @@ export class DataLabel extends EventEmitter {
   initialize () {
     this._createContainer();
     this._createContent();
-
-    this.startUpdating();
   }
 
   startUpdating () {
+    this.isUpdating = true;
     requestAnimationFrame(_=> this.update());
+  }
+
+  stopUpdating () {
+    this.isUpdating = false;
   }
 
   update () {
@@ -123,7 +128,9 @@ export class DataLabel extends EventEmitter {
       this.updatePositionRequested = false;
     }
 
-    requestAnimationFrame(_=> this.update());
+    if (this.isUpdating) {
+      requestAnimationFrame(_=> this.update());
+    }
   }
 
   /**
@@ -143,10 +150,12 @@ export class DataLabel extends EventEmitter {
 
   showLabel () {
     addClass(this.container, 'telechart2-chart-label_visible');
+    this.startUpdating();
   }
 
   hideLabel () {
     removeClass(this.container, 'telechart2-chart-label_visible');
+    this.stopUpdating();
   }
 
   showYear () {
@@ -424,7 +433,7 @@ export class DataLabel extends EventEmitter {
   /**
    * @param {number} width
    * @param {number} height
-   * @return {{top: number, left: number, translateY: number, translateX: number}}
+   * @return {{translateY: number, translateX: number}}
    * @private
    */
   _clampPosition (width, height) {

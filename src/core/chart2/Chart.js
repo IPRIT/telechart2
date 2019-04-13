@@ -273,7 +273,9 @@ export class Chart extends BaseChart {
     oldX = this.cursorAnimation && this.cursorAnimation.currentPosition || oldX;
 
     if (!this.cursorAnimation) {
-      if (this._firstCursorAnimation) {
+      const viewportRange = this.viewportRange;
+      const insideViewportRange = viewportRange[0] <= oldX && oldX <= viewportRange[1];
+      if (this._firstCursorAnimation || !insideViewportRange) {
         oldX = newX;
       }
       this._firstCursorAnimation = false;
@@ -610,8 +612,12 @@ export class Chart extends BaseChart {
    * @private
    */
   _insideChart ({ pageX, pageY }) {
-    // todo: workaround from previous Telechart version
-    return true;
+    const { top, left } = this.telechart.canvasOffset;
+    const chartTop = pageY - top - this.seriesOffsetTop;
+    const chartLeft = pageX - left;
+
+    return chartTop >= 0 && chartTop <= this.chartHeight
+      && chartLeft >= 0 && chartLeft <= this.chartWidth;
   }
 
   /**

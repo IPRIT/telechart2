@@ -57,7 +57,7 @@ export class ChartAxisY extends ChartAxis {
       const element = this.elements[ i ];
       const y = this._computeValuePosition( element.value );
 
-      context.globalAlpha = textColorAlpha * element.opacity * line.opacity;
+      context.globalAlpha = textColorAlpha * element.opacity * ( this.isDoubleAxis ? line.opacity : 1 );
       context.fillText(element.formattedValue, x, y - 5);
 
       if (drawAxes) {
