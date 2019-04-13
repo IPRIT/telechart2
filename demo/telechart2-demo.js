@@ -37,7 +37,7 @@ if (query && typeof query.oc !== 'undefined') {
   window.t2_foc = query.oc === 'true';
 }
 
-for (let i = 0; i < sources.length; ++i) {
+for (let i = 4; i < sources.length; ++i) {
   const source = sources[ i ];
   createChart( source, i );
 }

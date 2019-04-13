@@ -54,3 +54,11 @@ export function isTransformSupported () {
 
   return div && div.style[ prefix ] !== undefined;
 }
+
+/**
+ * @return {number}
+ */
+export function getDevicePixelRatio () {
+  const dpr = window.devicePixelRatio || 1;
+  return 1 + (dpr - 1) / 1.25;
+}

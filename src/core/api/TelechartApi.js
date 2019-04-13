@@ -9,7 +9,7 @@ import {
   addClass,
   ChartThemes,
   ChartVariables, clampNumber,
-  createElement, cssText, getElementOffset,
+  createElement, cssText, getDevicePixelRatio, getElementOffset,
   getElementWidth, interpolateThemeClass,
   isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported, passiveIfSupported, removeClass,
   resolveElement, setAttributes, throttle
@@ -380,7 +380,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.mainCanvasHeight = ChartVariables.mainMaxHeight;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = getDevicePixelRatio();
 
     setAttributes(canvas, {
       style: cssText({
@@ -404,7 +404,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.axisCanvasHeight = ChartVariables.mainMaxHeight;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = getDevicePixelRatio();
 
     setAttributes(canvas, {
       style: cssText({
@@ -428,7 +428,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.uiCanvasHeight = ChartVariables.mainMaxHeight;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = getDevicePixelRatio();
 
     setAttributes(canvas, {
       style: cssText({
@@ -452,7 +452,7 @@ export class TelechartApi extends EventEmitter {
     ) - 24; // left + right padding
     this.navigationSeriesCanvasHeight = ChartVariables.navigationChartHeight;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = getDevicePixelRatio();
 
     setAttributes(canvas, {
       style: cssText({
@@ -476,7 +476,7 @@ export class TelechartApi extends EventEmitter {
     );
     this.navigationUICanvasHeight = ChartVariables.navigationChartUIHeight;
 
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = getDevicePixelRatio();
 
     setAttributes(canvas, {
       style: cssText({
@@ -511,7 +511,7 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _getEnvironmentOptions () {
-    const devicePixelRatio = window.devicePixelRatio || 1;
+    const devicePixelRatio = getDevicePixelRatio();
 
     const canvasOffset = getElementOffset( this.mainCanvas );
     const canvasWidth = this.mainCanvasWidth;
