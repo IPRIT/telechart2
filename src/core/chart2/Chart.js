@@ -4,6 +4,7 @@ import { ChartTypes } from './ChartTypes';
 import { ChartEvents } from './events/ChartEvents';
 import { Tween, TweenEvents } from '../animation/Tween';
 import { TransitionEvents, TransitionPlayback } from '../animation/TransitionPlayback';
+import { TelechartWorkerEvents } from '../worker/worker-events';
 
 const CursorAnimationType = {
   inactive: 0x0,
@@ -335,14 +336,28 @@ export class Chart extends BaseChart {
     if (!this.cursorAnimation) {
       return;
     }
-
-    const viewportDistance = this.viewportRange[ 1 ] - this.viewportRange[ 0 ];
-    const scale = Math.abs( toX - fromX ) / viewportDistance;
-
-    const acceleration = viewportDistance * scale;
-
-    // this.cursorAnimation.setAcceleration( acceleration );
     this.cursorAnimation.setToPosition( toX );
+  }
+
+  emitEvent (eventName, event) {
+    switch (eventName) {
+      case 'mousemove':
+        this._onMouseMove( event );
+        break;
+      case 'mouseleave':
+        this._onMouseLeave( event );
+        break;
+
+      case 'touchstart':
+        this._onTouchStart( event );
+        break;
+      case 'touchmove':
+        this._onTouchMove( event );
+        break;
+      case 'touchend':
+        this._onTouchEnd( event );
+        break;
+    }
   }
 
   /**
@@ -383,5 +398,245 @@ export class Chart extends BaseChart {
     const padding = this.computeViewportPadding( minX, maxX );
 
     return [ minX - padding, maxX + padding ];
+  }
+
+  /**
+   * @param {MouseEvent} ev
+   * @private
+   */
+  _onMouseMove (ev) {
+    this._onCursorMove( ev );
+  }
+
+  /**
+   * @param {MouseEvent} ev
+   * @private
+   */
+  _onMouseLeave (ev) {
+    this._onCursorLeave();
+  }
+
+  /**
+   * @param {TouchEvent} ev
+   * @private
+   */
+  _onTouchStart (ev) {
+    const targetTouch = ev.targetTouches[ 0 ];
+
+    this._onCursorMove( targetTouch );
+  }
+
+  /**
+   * @param {TouchEvent} ev
+   * @private
+   */
+  _onTouchMove (ev) {
+    const targetTouch = ev.targetTouches[ 0 ];
+
+    this._onCursorMove( targetTouch );
+  }
+
+  /**
+   * @param {TouchEvent} ev
+   * @private
+   */
+  _onTouchEnd (ev) {
+    this._onCursorLeave();
+  }
+
+  /**
+   * @param cursorPosition
+   * @private
+   */
+  _onCursorMove (cursorPosition) {
+    const insideChart = this._insideChart( cursorPosition );
+
+    this._setInsideChartState(
+      insideChart
+    );
+
+    if (!insideChart) {
+      return;
+    }
+
+    const oldIndex = this.axisCursorPointIndex;
+
+    const cursorX = this.projectCursorToX( cursorPosition );
+    this.axisCursorPointIndex = this._findPointIndexByCursor( cursorX );
+    this.axisCursorPositionX = this.xAxis[ this.axisCursorPointIndex ];
+
+    const indexChanged = this.axisCursorPointIndex !== oldIndex;
+
+    if (indexChanged) {
+      this.emit(ChartEvents.TRANSLATE_MARKERS, [
+        this.axisCursorPositionX,
+        this.xAxis[ oldIndex ]
+      ]);
+      this.emit( ChartEvents.REDRAW_CURSOR );
+    }
+
+    this._updateLabel( indexChanged );
+  }
+
+  _updateLabel (changed = true) {
+    const lines = this._prepareLabelData();
+    const viewportRange = this.viewportRange;
+
+    const data = {
+      changed, lines, viewportRange
+    };
+
+    if (this.telechart.isWorker) {
+      this.telechart.global.postMessage({
+        type: TelechartWorkerEvents.UPDATE_DATA_LABEL,
+        data
+      });
+    } else {
+      this.telechart.dedicatedApi.updateDataLabel( data );
+    }
+  }
+
+  /**
+   * @param {number} cursorX
+   * @return {number}
+   * @private
+   */
+  _findPointIndexByCursor (cursorX) {
+    const [ lowerIndex, upperIndex ] = binarySearchIndexes( this.xAxis, cursorX );
+
+    let index = null;
+    if (lowerIndex < 0 && upperIndex >= 0) {
+      index = upperIndex;
+    } else if (lowerIndex >= 0 && upperIndex >= this.xAxis.length) {
+      index = lowerIndex;
+    } else {
+      const lowerDistance = Math.abs( cursorX - this.xAxis[ lowerIndex ] );
+      const upperDistance = Math.abs( cursorX - this.xAxis[ upperIndex ] );
+      const isLowerCloser = lowerDistance <= upperDistance;
+
+      const isLowerVisible = this.xAxis[ lowerIndex ] >= this.viewportRange[ 0 ];
+      const isUpperVisible = this.xAxis[ upperIndex ] <= this.viewportRange[ 1 ];
+
+      index = isLowerCloser
+        ? ( isLowerVisible ? lowerIndex : upperIndex )
+        : ( isUpperVisible ? upperIndex : lowerIndex );
+    }
+
+    return index;
+  }
+
+  /**
+   * @private
+   */
+  _onCursorLeave () {
+    this._setInsideChartState( false );
+  }
+
+  /**
+   * @param {boolean} isInside
+   * @param {boolean} immediate
+   * @private
+   */
+  _setInsideChartState (isInside, immediate = false) {
+    const changed = this.cursorInsideChart !== isInside;
+    if (!changed && !immediate) {
+      return;
+    }
+
+    this.cursorInsideChart = isInside;
+
+    if (this._markerHideTimeout) {
+      clearTimeout( this._markerHideTimeout );
+      this._markerHideTimeout = null;
+    }
+
+    const change = _ => {
+      this._onCursorInsideChartChanged( isInside );
+    };
+
+    if (!isInside && !immediate) {
+      // create short delay for cursor & markers hiding
+      this._markerHideTimeout = setTimeout( change, 2000 );
+    } else {
+      change();
+    }
+  }
+
+  /**
+   * @param {boolean} isInside
+   * @private
+   */
+  _onCursorInsideChartChanged (isInside) {
+    isInside
+      ? this._showCursor()
+      : this._hideCursor();
+
+    this._toggleDataLabelVisibility( isInside );
+  }
+
+  /**
+   * @param visibility
+   * @private
+   */
+  _toggleDataLabelVisibility (visibility) {
+    if (this.telechart.isWorker) {
+      this.telechart.global.postMessage({
+        type: TelechartWorkerEvents.SET_DATA_LABEL_VISIBILITY,
+        visibility
+      });
+    } else {
+      this.telechart.dedicatedApi.setDataLabelVisibility( visibility );
+    }
+  }
+
+  /**
+   * @private
+   */
+  _showCursor () {
+    this.emit( ChartEvents.SHOW_CURSOR );
+  }
+
+  /**
+   * @private
+   */
+  _hideCursor () {
+    this.emit( ChartEvents.HIDE_CURSOR );
+  }
+
+  /**
+   * @param {number} pageX
+   * @param {number} pageY
+   * @return {boolean}
+   * @private
+   */
+  _insideChart ({ pageX, pageY }) {
+    // todo: workaround from previous Telechart version
+    return true;
+  }
+
+  /**
+   * @return {Array}
+   * @private
+   */
+  _prepareLabelData () {
+    const data = [];
+
+    const index = this.axisCursorPointIndex;
+    const x = this.xAxis[ index ];
+
+    this.eachSeries(line => {
+      data.push({
+        color: line.color,
+        label: line.label,
+        name: line.name,
+        visible: line.isVisible,
+        x,
+        y: line.yAxis[ index ],
+        canvasY: this.projectYToCanvas( line.yAxis[ index ] ),
+        canvasX: this.projectXToCanvas( line.xAxis[ index ] )
+      });
+    });
+
+    return data;
   }
 }

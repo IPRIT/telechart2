@@ -15,6 +15,18 @@ import {
   resolveElement, setAttributes, throttle
 } from '../../utils';
 
+const NavUIComponent = {
+  SLIDER: {
+    LEFT_BORDER: 1,
+    RIGHT_BORDER: 2,
+    INNER: 3
+  },
+  OVERLAY: {
+    LEFT: 4,
+    RIGHT: 5
+  }
+};
+
 export class TelechartApi extends EventEmitter {
 
   /**
@@ -174,7 +186,8 @@ export class TelechartApi extends EventEmitter {
   initialize () {
     this.addEventListeners();
 
-    this._sendEventThrottled = throttle( this._sendEvent.bind( this ), 16 );
+    this._sendMainCanvasEventThrottled = throttle( this._sendMainCanvasEvent.bind( this ), 16 );
+    this._sendNavUICanvasEventThrottled = throttle( this._sendNavUICanvasEvent.bind( this ), 16 );
   }
 
   /**
@@ -243,8 +256,6 @@ export class TelechartApi extends EventEmitter {
   }
 
   setNavigationRange (range) {
-    console.log( range );
-
     this.navigationRange = range;
   }
 
@@ -740,11 +751,11 @@ export class TelechartApi extends EventEmitter {
   }
 
   _onMainCanvasMouseMove (ev) {
-    this._sendEventThrottled( 'mousemove', ev );
+    this._sendMainCanvasEventThrottled( 'mousemove', ev );
   }
 
   _onMainCanvasMouseLeave (ev) {
-    this._sendEventThrottled( 'mouseleave', ev );
+    this._sendMainCanvasEventThrottled( 'mouseleave', ev );
   }
 
   _onMainCanvasTouchStart (ev) {
@@ -755,7 +766,7 @@ export class TelechartApi extends EventEmitter {
       pageY: targetTouch.pageY
     };
 
-    this._sendEventThrottled( 'touchstart', ev );
+    this._sendMainCanvasEventThrottled( 'touchstart', ev );
   }
 
   _onMainCanvasTouchMove (ev) {
@@ -778,7 +789,7 @@ export class TelechartApi extends EventEmitter {
       ev.preventDefault();
     }
 
-    this._sendEventThrottled( 'touchmove', ev );
+    this._sendMainCanvasEventThrottled( 'touchmove', ev );
   }
 
   _onMainCanvasTouchEnd (ev) {
@@ -788,7 +799,7 @@ export class TelechartApi extends EventEmitter {
       ev.preventDefault();
     }
 
-    this._sendEventThrottled( 'touchend', ev );
+    this._sendMainCanvasEventThrottled( 'touchend', ev );
   }
 
   /**
@@ -796,7 +807,7 @@ export class TelechartApi extends EventEmitter {
    * @param ev
    * @private
    */
-  _sendEvent (eventName, ev) {
+  _sendMainCanvasEvent (eventName, ev) {
     if (this.isOffscreenCanvas) {
       const transferableEvent = this._transferableEvent( ev );
 
@@ -832,13 +843,8 @@ export class TelechartApi extends EventEmitter {
   }
 
   _attachNavigatorListeners () {
-    this.navigationUICanvas.addEventListener('mousedown', ev => {
-      this._onNavUICanvasMouseDown( ev );
-    });
-
-    this.navigationUICanvas.addEventListener('mousemove', ev => {
-      this._onNavUICanvasMouseMove( ev );
-    });
+    this.navigationUICanvas.addEventListener('mousedown', ev => this._onNavUICanvasMouseDown( ev ));
+    this.navigationUICanvas.addEventListener('click', ev => this._onNavUICanvasClick( ev ));
 
     // worker events
     if (this.worker) {
@@ -856,14 +862,43 @@ export class TelechartApi extends EventEmitter {
     }
   }
 
+  /**
+   * @param eventName
+   * @param ev
+   * @param args
+   * @private
+   */
+  _sendNavUICanvasEvent (eventName, ev, args = []) {
+    if (this.isOffscreenCanvas) {
+      const transferableEvent = this._transferableEvent( ev );
+
+      this.worker.postMessage({
+        type: TelechartWorkerEvents.NAV_UI_CANVAS_EVENT,
+        eventName,
+        event: transferableEvent,
+        args
+      });
+    } else {
+      this.telechart.navUICanvasEvent( eventName, ev, args );
+    }
+  }
+
   _onNavUICanvasMouseDown (ev) {
     // on mouse down
-    const component = this._detectNavUIComponent( ev );
-    console.log( component );
+    const result = this._detectNavUIComponent( ev );
+    console.log( result );
   }
 
   _onNavUICanvasMouseMove (ev) {
     // on mouse move
+  }
+
+  _onNavUICanvasClick (ev) {
+    const { component, scaledPosition } = this._detectNavUIComponent( ev );
+    if (component === NavUIComponent.OVERLAY.LEFT
+      || component === NavUIComponent.OVERLAY.RIGHT) {
+      this._sendNavUICanvasEventThrottled( 'overlay.click', ev, [ scaledPosition ] );
+    }
   }
 
   /**
@@ -892,6 +927,7 @@ export class TelechartApi extends EventEmitter {
 
     const realWidth = uiWidth - 2 * ChartVariables.chartPaddingLeftRight;
     const cursorX = offsetX - ChartVariables.chartPaddingLeftRight;
+    const scaledPosition = cursorX / realWidth;
 
     const borderWidth = 9;
     const borderTapArea = borderWidth;
@@ -902,27 +938,36 @@ export class TelechartApi extends EventEmitter {
     const leftMinX = leftBorderOffsetX - borderTapArea;
     const leftMaxX = leftBorderOffsetX + borderTapArea;
 
+    const wrapComponent = component => {
+      return {
+        scaledPosition,
+        component
+      };
+    };
+
     if (leftMinX <= cursorX && cursorX <= leftMaxX) {
-      return 'slider.leftBorder';
+      return wrapComponent( NavUIComponent.SLIDER.LEFT_BORDER );
     }
 
     const rightMinX = rightBorderOffsetX - borderTapArea;
     const rightMaxX = rightBorderOffsetX + borderTapArea;
 
     if (rightMinX <= cursorX && cursorX <= rightMaxX) {
-      return 'slider.rightBorder';
+      return wrapComponent( NavUIComponent.SLIDER.RIGHT_BORDER );
     }
 
     if (leftBorderOffsetX <= cursorX && cursorX <= rightBorderOffsetX) {
-      return 'slider';
+      return wrapComponent( NavUIComponent.SLIDER.INNER );
     }
 
     if (0 <= cursorX && cursorX <= leftBorderOffsetX) {
-      return 'ui.leftOverlay';
+      return wrapComponent( NavUIComponent.OVERLAY.LEFT );
     }
 
     if (rightBorderOffsetX <= cursorX && cursorX <= realWidth) {
-      return 'ui.leftOverlay';
+      return wrapComponent( NavUIComponent.OVERLAY.RIGHT );
     }
+
+    return wrapComponent( 0 );
   }
 }

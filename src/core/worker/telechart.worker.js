@@ -57,3 +57,9 @@ eventBus.on(TelechartWorkerEvents.MAIN_CANVAS_EVENT, ev => {
 
   telechart.mainCanvasEvent( eventName, event );
 });
+
+eventBus.on(TelechartWorkerEvents.NAV_UI_CANVAS_EVENT, ev => {
+  let { eventName, event, args } = ev.data;
+
+  telechart.navUICanvasEvent( eventName, event, args );
+});

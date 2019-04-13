@@ -294,6 +294,13 @@ export class Series extends EventEmitter {
   /**
    * @return {Array<number>}
    */
+  get xAxis () {
+    return this._xAxis;
+  }
+
+  /**
+   * @return {Array<number>}
+   */
   get yAxis () {
     return this._yAxis;
   }

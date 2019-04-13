@@ -107,7 +107,6 @@ export class NavigatorChart extends BaseChart {
 
     this.sendRangeToApi();
 
-
     if (Math.random() > .7) {
       const f = _ => {
         animationTimeout( Math.random() * 200 + 500 ).then(_ => {
@@ -380,6 +379,14 @@ export class NavigatorChart extends BaseChart {
    */
   updateNavigationRange (min, max) {
     this.setNavigationRange( min, max, { emitChange: false } );
+  }
+
+  emitEvent (eventName, event, ...args) {
+    switch (eventName) {
+      case 'overlay.click':
+        this._onSliderOverlayClick( event, ...args );
+        break;
+    }
   }
 
   /**
@@ -817,12 +824,11 @@ export class NavigatorChart extends BaseChart {
   }
 
   /**
-   * @param {string} direction
    * @param {MouseEvent} ev
+   * @param {number} position
    * @private
    */
-  _onSliderOverlayClick (direction, ev) {
-    const position = this._resolveNavigatorPosition( ev );
+  _onSliderOverlayClick (ev, position = 0) {
     const halfDistance = ( this._navigatorRange[ 1 ] - this._navigatorRange[ 0 ] ) * .5;
 
     const [ min, max ] = this._clampNavigationRange(
@@ -832,15 +838,5 @@ export class NavigatorChart extends BaseChart {
     );
 
     this.animateNavigationRangeTo( min, max );
-  }
-
-  /**
-   * @param {number} pageX
-   * @param {number} pageY
-   * @private
-   */
-  _resolveNavigatorPosition ({ pageX, pageY }) {
-    const left = ChartVariables.chartPaddingLeftRight;
-    return ( pageX - left ) / this.navigatorWidth;
   }
 }

@@ -16,4 +16,5 @@ export const TelechartWorkerEvents = {
 
   // events
   MAIN_CANVAS_EVENT: 'mainCanvasEvent',
+  NAV_UI_CANVAS_EVENT: 'navUICanvasEvent',
 };

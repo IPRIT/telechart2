@@ -449,6 +449,10 @@ export class Telechart2 extends EventEmitter {
     this._chart.emitEvent( eventName, event );
   }
 
+  navUICanvasEvent (eventName, event, args = []) {
+    this._navigatorChart.emitEvent( eventName, event, ...args );
+  }
+
   /**
    * @return {string}
    */
