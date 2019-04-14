@@ -37,8 +37,8 @@ export const ChartVariables = {
 };
 
 export const DprSampling = {
-  main: 1.8,
-  axis: 1.25,
+  main: 2,
+  axis: 1.8,
   ui: 1.25,
   navSeries: 2.3,
   navUI: 1

@@ -649,10 +649,6 @@ export class BaseChart extends EventEmitter {
     }
 
     this.emit( ChartEvents.REDRAW_CURSOR );
-
-    if (this.isMainChart) {
-      this._setInsideChartState( false, true );
-    }
   }
 
   /**

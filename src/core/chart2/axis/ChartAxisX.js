@@ -6,6 +6,11 @@ let AUTOINCREMENT_ID = 1;
 export class ChartAxisX extends ChartAxis {
 
   /**
+   * @type {Object}
+   */
+  dateCache = Object.create( {} );
+
+  /**
    * @type {*}
    */
   axesValuesMapping = {};
@@ -182,15 +187,30 @@ export class ChartAxisX extends ChartAxis {
    * @private
    */
   _toDateString (value, withHours = false) {
+    if (typeof value === 'string') {
+      return value;
+    }
+
+    value = Math.floor( value );
+
+    const cacheKey = value.toString();
+    if (this.dateCache[ cacheKey ]) {
+      return this.dateCache[ cacheKey ];
+    }
+
     const date = new Date( value );
     const datePart = date.toUTCString().split( ' ' );
 
     const base = `${datePart[ 2 ]} ${datePart[ 1 ]} ${date.getFullYear()}`;
 
+    let result = base;
+
     if (withHours) {
-      return `${zeroFill(date.getHours())}:${zeroFill(date.getMinutes())} ` + base;
+      result = `${zeroFill(date.getHours())}:${zeroFill(date.getMinutes())} ` + base;
     }
 
-    return base;
+    this.dateCache[ cacheKey ] = result;
+
+    return result;
   }
 }

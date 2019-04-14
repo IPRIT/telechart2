@@ -226,7 +226,7 @@ export class ChartAxis extends EventEmitter {
     };
 
     const animation = new Tween(animationObject, 'opacity', 1, {
-      duration: 250,
+      duration: 200,
       timingFunction: 'easeInOutQuad'
     });
     animation.on( TweenEvents.COMPLETE, onComplete );
@@ -275,7 +275,7 @@ export class ChartAxis extends EventEmitter {
     };
 
     const animation = new Tween(animationObject, 'opacity', 0, {
-      duration: 250,
+      duration: 150,
       timingFunction: 'easeInOutQuad'
     });
 
