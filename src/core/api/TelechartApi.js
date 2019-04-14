@@ -935,6 +935,10 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _transferableEvent (ev) {
+    if (!this.isOffscreenCanvas) {
+      return ev;
+    }
+
     const isTouchEvent = !!ev.targetTouches && ev.targetTouches.length;
     const touch = isTouchEvent
       ? ev.targetTouches[ 0 ]
@@ -1051,7 +1055,7 @@ export class TelechartApi extends EventEmitter {
       }
     }
 
-    if (!newCursor) {
+    if (!newCursor && this.currentNavCursor) {
       setAttributes( this.navigatorRoot, { style: '' } );
       removeClass( this.navigatorRoot, 'grabbable' );
     }

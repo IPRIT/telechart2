@@ -1,10 +1,11 @@
 import { EventEmitter } from '../misc/EventEmitter';
-import { SeriesTypes } from '../series/SeriesTypes';
+import { SeriesTypeMapping, SeriesTypes } from '../series/SeriesTypes';
 import { Series } from '../series/Series';
 import { Tween, TweenEvents } from '../animation/Tween';
 import { ChartTypes } from './ChartTypes';
 import { ChartEvents } from './events/ChartEvents';
 import { ChartAxisY } from './axis/ChartAxisY';
+import { ChartAxisY2 } from './axis/ChartAxisY2';
 import { ChartAxisX } from './axis/ChartAxisX';
 
 import {
@@ -14,7 +15,6 @@ import {
   ensureNumber,
   isDate,
 } from '../../utils';
-import { ChartAxisY2 } from './axis/ChartAxisY2';
 
 let CHART_ID = 1;
 
@@ -52,9 +52,8 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {Array<number>}
-   * @private
    */
-  _xAxis = [];
+  xAxis = [];
 
   /**
    * @type {Array<Series>}
@@ -237,19 +236,19 @@ export class BaseChart extends EventEmitter {
    * @type {ChartAxisY}
    * @private
    */
-  _yAxisView = null;
+  yAxisView = null;
 
   /**
    * @type {ChartAxisY2}
    * @private
    */
-  _yAxisView2 = null;
+  yAxisView2 = null;
 
   /**
    * @type {ChartAxisX}
    * @private
    */
-  _xAxisView = null;
+  xAxisView = null;
 
   /**
    * @type {boolean}
@@ -383,28 +382,28 @@ export class BaseChart extends EventEmitter {
       line.update( deltaTime );
     });
 
-    if (this._yAxisView) {
+    if (this.yAxisView) {
       if (redrawAxis) {
-        this._yAxisView.requestRedraw();
+        this.yAxisView.requestRedraw();
       }
 
-      this._yAxisView.update( deltaTime );
+      this.yAxisView.update( deltaTime );
     }
 
-    if (this._yAxisView2) {
+    if (this.yAxisView2) {
       if (redrawAxis) {
-        this._yAxisView2.requestRedraw();
+        this.yAxisView2.requestRedraw();
       }
 
-      this._yAxisView2.update( deltaTime );
+      this.yAxisView2.update( deltaTime );
     }
 
-    if (this._xAxisView) {
+    if (this.xAxisView) {
       if (redrawAxis) {
-        this._xAxisView.requestRedraw();
+        this.xAxisView.requestRedraw();
       }
 
-      this._xAxisView.update( deltaTime );
+      this.xAxisView.update( deltaTime );
     }
 
     this.redrawChartNeeded = this.redrawChartNeeded || redrawChart;
@@ -419,33 +418,33 @@ export class BaseChart extends EventEmitter {
 
     let renderYAxis = this.telechart.forceRedraw;
 
-    if (this._yAxisView) {
-      if (this._yAxisView.redrawNeeded) {
+    if (this.yAxisView) {
+      if (this.yAxisView.redrawNeeded) {
         renderYAxis = true;
       }
     }
 
-    if (this._yAxisView2) {
-      if (this._yAxisView2.redrawNeeded) {
+    if (this.yAxisView2) {
+      if (this.yAxisView2.redrawNeeded) {
         renderYAxis = true;
       }
     }
 
     if (renderYAxis) {
-      if (this._yAxisView) {
+      if (this.yAxisView) {
         // clear rect inside
-        this._yAxisView.requestRedraw();
-        this._yAxisView.render();
+        this.yAxisView.requestRedraw();
+        this.yAxisView.render();
       }
 
-      if (this._yAxisView2) {
-        this._yAxisView2.requestRedraw();
-        this._yAxisView2.render();
+      if (this.yAxisView2) {
+        this.yAxisView2.requestRedraw();
+        this.yAxisView2.render();
       }
     }
 
-    if (this._xAxisView) {
-      this._xAxisView.render();
+    if (this.xAxisView) {
+      this.xAxisView.render();
     }
   }
 
@@ -492,7 +491,7 @@ export class BaseChart extends EventEmitter {
     const xAxisIndex = columns.findIndex(column => {
       return types[ column[ 0 ] ] === SeriesTypes.x;
     });
-    const xAxis = this._xAxis = columns[ xAxisIndex ].slice( 1 );
+    const xAxis = this.xAxis = columns[ xAxisIndex ].slice( 1 );
 
     let yAxes = columns.slice(); // copy an array to change later
     yAxes.splice( xAxisIndex, 1 ); // remove x axis from the array
@@ -514,8 +513,10 @@ export class BaseChart extends EventEmitter {
         color, name, options: this.extendSeriesOptions( options )
       };
 
+      const SeriesClass = SeriesTypeMapping[ type ] || Series;
+
       // create instance
-      const series = new Series( this, settings, i );
+      const series = new SeriesClass( this, settings, i );
       series.initialize();
 
       this.series.push( series );
@@ -525,7 +526,7 @@ export class BaseChart extends EventEmitter {
   initializeStackedSumTree () {
     const maxN = 2 ** this.series.length;
     const lines = this.series;
-    const xAxis = this._xAxis;
+    const xAxis = this.xAxis;
     const chunkSize = xAxis.length;
     const yAxes = lines.map( line => line.yAxis );
     const sumTree = [];
@@ -557,13 +558,13 @@ export class BaseChart extends EventEmitter {
     const yAxisView = new ChartAxisY( this, this.isYScaled );
     yAxisView.initialize();
 
-    this._yAxisView = yAxisView;
+    this.yAxisView = yAxisView;
 
     if (this.isYScaled) {
       const yAxisView2 = new ChartAxisY2( this, this.isYScaled );
       yAxisView2.initialize();
 
-      this._yAxisView2 = yAxisView2;
+      this.yAxisView2 = yAxisView2;
     }
   }
 
@@ -574,7 +575,7 @@ export class BaseChart extends EventEmitter {
     const xAxisView = new ChartAxisX( this );
     xAxisView.initialize();
 
-    this._xAxisView = xAxisView;
+    this.xAxisView = xAxisView;
   }
 
   /**
@@ -648,8 +649,8 @@ export class BaseChart extends EventEmitter {
         this._viewportPointsGroupingNeeded = true;
       }
 
-      if (this._xAxisView) {
-        this._xAxisView.requestUpdateAnimations();
+      if (this.xAxisView) {
+        this.xAxisView.requestUpdateAnimations();
       }
 
       localExtremesUpdateRequested = true;
@@ -677,9 +678,9 @@ export class BaseChart extends EventEmitter {
     // recompute pixel values
     this.updateViewportPixel();
 
-    if (this._xAxisView) {
-      this._xAxisView.requestUpdateAnimations();
-      this._xAxisView.requestRedraw();
+    if (this.xAxisView) {
+      this.xAxisView.requestUpdateAnimations();
+      this.xAxisView.requestRedraw();
     }
 
     this.emit( ChartEvents.REDRAW_CURSOR );
@@ -714,7 +715,7 @@ export class BaseChart extends EventEmitter {
     let [ startIndex, endIndex ] = this._viewportRangeIndexes;
 
     startIndex = Math.max( 0, startIndex - 1 );
-    endIndex = Math.min( this._xAxis.length - 1, endIndex + 1 );
+    endIndex = Math.min( this.xAxis.length - 1, endIndex + 1 );
 
     // if we have no enough points
     // then we don't need to approximate
@@ -730,8 +731,8 @@ export class BaseChart extends EventEmitter {
     }
 
     const boostLimit = 300;
-    const boostScale = 1 + this._xAxis.length > boostLimit
-      ? Math.max(0, ( endIndex - startIndex ) / this._xAxis.length )
+    const boostScale = 1 + this.xAxis.length > boostLimit
+      ? Math.max(0, ( endIndex - startIndex ) / this.xAxis.length )
       : 1;
 
     let groupingDistanceLimitX = boostScale * this._groupingPixels * this.viewportPixelX;
@@ -741,9 +742,9 @@ export class BaseChart extends EventEmitter {
     let step = 1;
 
     for (let i = startIndex + 1; i <= endIndex; ++i) {
-      const pointX = this._xAxis[ i ];
+      const pointX = this.xAxis[ i ];
 
-      const groupStartDifferenceX = pointX - this._xAxis[ groupStartIndex ];
+      const groupStartDifferenceX = pointX - this.xAxis[ groupStartIndex ];
 
       if (groupStartDifferenceX >= groupingDistanceLimitX || i === endIndex) {
         if (groupStartIndex !== i - 1) {
@@ -768,7 +769,7 @@ export class BaseChart extends EventEmitter {
       endIndex++;
     }
 
-    endIndex = Math.min( endIndex, this._xAxis.length - 1 );
+    endIndex = Math.min( endIndex, this.xAxis.length - 1 );
 
     this._viewportPointsIndexes[ 0 ] = startIndex;
     this._viewportPointsIndexes[ 1 ] = endIndex;
@@ -839,12 +840,12 @@ export class BaseChart extends EventEmitter {
     if (updateAnimation) {
       this._updateOrCreateMinMaxYAnimation();
 
-      if (this._yAxisView) {
-        this._yAxisView.requestUpdateAnimations();
+      if (this.yAxisView) {
+        this.yAxisView.requestUpdateAnimations();
       }
 
-      if (this._yAxisView2) {
-        this._yAxisView2.requestUpdateAnimations();
+      if (this.yAxisView2) {
+        this.yAxisView2.requestUpdateAnimations();
       }
     }
   }
@@ -893,12 +894,12 @@ export class BaseChart extends EventEmitter {
     if (updateAnimation) {
       this._updateOrCreateMinMaxYAnimation2();
 
-      if (this._yAxisView) {
-        this._yAxisView.requestUpdateAnimations();
+      if (this.yAxisView) {
+        this.yAxisView.requestUpdateAnimations();
       }
 
-      if (this._yAxisView2) {
-        this._yAxisView2.requestUpdateAnimations();
+      if (this.yAxisView2) {
+        this.yAxisView2.requestUpdateAnimations();
       }
     }
   }
@@ -971,16 +972,16 @@ export class BaseChart extends EventEmitter {
     this._viewportRangeUpdateNeeded = true;
     this._viewportPointsGroupingNeeded = true;
 
-    if (this._yAxisView) {
-      this._yAxisView.onChartResize();
+    if (this.yAxisView) {
+      this.yAxisView.onChartResize();
     }
 
-    if (this._yAxisView2) {
-      this._yAxisView2.onChartResize();
+    if (this.yAxisView2) {
+      this.yAxisView2.onChartResize();
     }
 
-    if (this._xAxisView) {
-      this._xAxisView.onChartResize();
+    if (this.xAxisView) {
+      this.xAxisView.onChartResize();
     }
 
     this.redrawChartNeeded = true;
@@ -1202,13 +1203,6 @@ export class BaseChart extends EventEmitter {
   /**
    * @return {Array<number>}
    */
-  get xAxis () {
-    return this._xAxis;
-  }
-
-  /**
-   * @return {Array<number>}
-   */
   get viewportRange () {
     return this._viewportRange;
   }
@@ -1309,8 +1303,8 @@ export class BaseChart extends EventEmitter {
    */
   _updateViewportIndexes () {
     const [ rangeStart, rangeEnd ] = this._viewportRange;
-    const [ minLowerIndex, minUpperIndex ] = binarySearchIndexes( this._xAxis, rangeStart );
-    const [ maxLowerIndex, maxUpperIndex ] = binarySearchIndexes( this._xAxis, rangeEnd );
+    const [ minLowerIndex, minUpperIndex ] = binarySearchIndexes( this.xAxis, rangeStart );
+    const [ maxLowerIndex, maxUpperIndex ] = binarySearchIndexes( this.xAxis, rangeEnd );
 
     this._viewportRangeIndexes = [ minUpperIndex, maxLowerIndex ];
   }
@@ -1335,7 +1329,7 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _clampViewportRange (minX, maxX, preservePadding = false) {
-    const xAxis = this._xAxis;
+    const xAxis = this.xAxis;
 
     const globalMinX = xAxis[ 0 ];
     const globalMaxX = xAxis[ xAxis.length - 1 ];

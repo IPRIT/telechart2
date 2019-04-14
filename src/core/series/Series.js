@@ -2,6 +2,7 @@ import { EventEmitter } from '../misc/EventEmitter';
 import { arrayMinMax } from '../../utils';
 import { Tween, TweenEvents } from '../animation/Tween';
 import { ChartTypes } from '../chart2/ChartTypes';
+import { SeriesTypes } from './SeriesTypes';
 
 let SERIES_AUTOINCREMENT = 1;
 
@@ -27,7 +28,7 @@ export class Series extends EventEmitter {
    * @type {boolean}
    * @private
    */
-  isLineChart = false;
+  isMainChart = false;
 
   /**
    * @type {{xAxis: Array<number>, yAxis: Array<number>, label: string, type: string, name: string, color: string, options: *}}
@@ -43,15 +44,13 @@ export class Series extends EventEmitter {
 
   /**
    * @type {Array<number>}
-   * @private
    */
-  _xAxis = [];
+  xAxis = [];
 
   /**
    * @type {Array<number>}
-   * @private
    */
-  _yAxis = [];
+  yAxis = [];
 
   /**
    * @type {string}
@@ -142,8 +141,9 @@ export class Series extends EventEmitter {
     super();
 
     this.chart = chart;
-    this.isLineChart = chart.chartType === ChartTypes.chart;
     this.seriesIndex = index;
+
+    this.isMainChart = chart.chartType === ChartTypes.chart;
 
     this.settings = settings;
     this._parseSettings();
@@ -154,6 +154,8 @@ export class Series extends EventEmitter {
    */
   initialize () {
     // this.updateGlobalExtremes();
+
+    this.setType( SeriesTypes.line );
   }
 
   /**
@@ -215,15 +217,53 @@ export class Series extends EventEmitter {
     context.beginPath();
 
     if (!this.chart.isYScaled || this.seriesIndex === 0) {
-      this._drawPathToContext(context, interval, step);
+      this.drawPathToContext(context, interval, step);
     } else {
-      this._drawPathToContext(context, interval, step, {
+      this.drawPathToContext(context, interval, step, {
         viewportPixelY: this.chart.viewportPixelY2,
         currentLocalMinY: this.chart.currentLocalMinY2
       });
     }
 
     context.stroke();
+  }
+
+  /**
+   * @param context
+   * @param interval
+   * @param step
+   * @param settings
+   * @private
+   */
+  drawPathToContext (context, interval, step = 1, settings = {}) {
+    const {
+      viewportRange = this.chart.viewportRange,
+      viewportPixelX = this.chart.viewportPixelX,
+      viewportPixelY = this.chart.viewportPixelY,
+      currentLocalMinY = this.chart.currentLocalMinY
+    } = settings || {};
+
+    const [ startIndex, endIndex ] = interval;
+    const [ minViewportX ] = viewportRange;
+
+    const chartHeight = this.chart.chartHeight;
+    const chartOffsetTop = this.chart.seriesOffsetTop;
+    const chartBottomLineY = chartOffsetTop + chartHeight;
+
+    const dxOffset = minViewportX / viewportPixelX;
+    const dyOffset = currentLocalMinY / viewportPixelY;
+
+    context.moveTo(
+      this.xAxis[ startIndex ] / viewportPixelX - dxOffset,
+      chartBottomLineY - ( this.yAxis[ startIndex ] / viewportPixelY - dyOffset )
+    );
+
+    for (let i = startIndex + 1; i <= endIndex; i += step) {
+      context.lineTo(
+        this.xAxis[ i ] / viewportPixelX - dxOffset,
+        chartBottomLineY - ( this.yAxis[ i ] / viewportPixelY - dyOffset )
+      );
+    }
   }
 
   /**
@@ -262,7 +302,7 @@ export class Series extends EventEmitter {
     const [ rangeStartIndex, rangeEndIndex ] = this.chart._viewportRangeIndexes;
 
     const [ minValue, maxValue ] = arrayMinMax(
-      this._yAxis, rangeStartIndex, rangeEndIndex
+      this.yAxis, rangeStartIndex, rangeEndIndex
     );
 
     this.localMinY = minValue;
@@ -274,7 +314,7 @@ export class Series extends EventEmitter {
    */
   updateGlobalExtremes () {
     const [ minValue, maxValue ] = arrayMinMax(
-      this._yAxis, 0, this._xAxis.length - 1
+      this.yAxis, 0, this.xAxis.length - 1
     );
 
     this._globalMinY = minValue;
@@ -289,24 +329,17 @@ export class Series extends EventEmitter {
   }
 
   /**
+   * @param {string} type
+   */
+  setType (type) {
+    this.type = type;
+  }
+
+  /**
    * @return {number}
    */
   get id () {
     return this._id;
-  }
-
-  /**
-   * @return {Array<number>}
-   */
-  get xAxis () {
-    return this._xAxis;
-  }
-
-  /**
-   * @return {Array<number>}
-   */
-  get yAxis () {
-    return this._yAxis;
   }
 
   /**
@@ -376,8 +409,8 @@ export class Series extends EventEmitter {
       options = {}
     } = this.settings;
 
-    this._xAxis = xAxis;
-    this._yAxis = yAxis;
+    this.xAxis = xAxis;
+    this.yAxis = yAxis;
     this._label = label;
     this._color = color;
     this._name = name;
@@ -435,43 +468,5 @@ export class Series extends EventEmitter {
     this.opacityAnimation.on( TweenEvents.CANCELLED, onFinished );
 
     this.opacityAnimation.start();
-  }
-
-  /**
-   * @param context
-   * @param interval
-   * @param step
-   * @param settings
-   * @private
-   */
-  _drawPathToContext (context, interval, step = 1, settings = {}) {
-    const {
-      viewportRange = this.chart.viewportRange,
-      viewportPixelX = this.chart.viewportPixelX,
-      viewportPixelY = this.chart.viewportPixelY,
-      currentLocalMinY = this.chart.currentLocalMinY
-    } = settings || {};
-
-    const [ startIndex, endIndex ] = interval;
-    const [ minViewportX ] = viewportRange;
-
-    const chartHeight = this.chart.chartHeight;
-    const chartOffsetTop = this.chart.seriesOffsetTop;
-    const chartBottomLineY = chartOffsetTop + chartHeight;
-
-    const dxOffset = minViewportX / viewportPixelX;
-    const dyOffset = currentLocalMinY / viewportPixelY;
-
-    context.moveTo(
-      this._xAxis[ startIndex ] / viewportPixelX - dxOffset,
-      chartBottomLineY - ( this._yAxis[ startIndex ] / viewportPixelY - dyOffset )
-    );
-
-    for (let i = startIndex + 1; i <= endIndex; i += step) {
-      context.lineTo(
-        this._xAxis[ i ] / viewportPixelX - dxOffset,
-        chartBottomLineY - ( this._yAxis[ i ] / viewportPixelY - dyOffset )
-      );
-    }
   }
 }
