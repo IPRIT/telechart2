@@ -1097,19 +1097,19 @@ export class TelechartApi extends EventEmitter {
     const scaledPosition = cursorX / realWidth;
 
     const borderWidth = 9;
-    const borderTapArea = borderWidth * 1.5;
+    const borderTapArea = borderWidth * 2;
 
     const leftBorderOffsetX = realWidth * min + borderWidth / 2;
     const rightBorderOffsetX = realWidth * max - borderWidth / 2;
 
     const leftMinX = leftBorderOffsetX - borderTapArea;
-    const leftMaxX = leftBorderOffsetX + borderTapArea / 1.5;
+    const leftMaxX = leftBorderOffsetX + borderTapArea / 2;
 
     if (leftMinX <= cursorX && cursorX <= leftMaxX) {
       return wrapComponent( NavUIComponent.SLIDER.LEFT_BORDER );
     }
 
-    const rightMinX = rightBorderOffsetX - borderTapArea / 1.5;
+    const rightMinX = rightBorderOffsetX - borderTapArea / 2;
     const rightMaxX = rightBorderOffsetX + borderTapArea;
 
     if (rightMinX <= cursorX && cursorX <= rightMaxX) {
