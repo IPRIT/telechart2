@@ -307,14 +307,17 @@ export class NavigatorChart extends BaseChart {
 
   sendRangeToApi () {
     const range = this._navigatorRange;
+    const [ f, s ] = this.telechart._chart._viewportPointsIndexes;
+    const rangeX = [ this.xAxis[ f ], this.xAxis[ s ] ];
 
     if (this.telechart.isWorker) {
       this.telechart.global.postMessage({
         type: TelechartWorkerEvents.SET_NAVIGATION_RANGE,
-        range
+        range,
+        rangeX
       });
     } else {
-      this.telechart.dedicatedApi.setNavigationRange( range );
+      this.telechart.dedicatedApi.setNavigationRange( range, rangeX );
     }
   }
 

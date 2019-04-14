@@ -1,0 +1,19 @@
+@import "../system/index";
+@import "../themes/index";
+
+@include block('range-view', 'component') {
+  font-size: 13px;
+  font-weight: bold;
+  transition: transform .1s $primary-transition-function,
+    opacity .1s $primary-transition-function;
+  transform: scale(1);
+  transform-origin: bottom right;
+  opacity: 1;
+  will-change: transform;
+
+  @include modifier('updating') {
+    transform: scale(.5);
+    opacity: 0;
+    transform-origin: top right;
+  }
+}

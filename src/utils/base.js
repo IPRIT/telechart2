@@ -97,3 +97,19 @@ export function throttle (fn, delayMs) {
 
   return wrapper;
 }
+
+/**
+ * @param {Function} fn
+ * @param {number} time
+ * @return {Function}
+ */
+export function debounce (fn, time) {
+  let timeout;
+
+  return function () {
+    const fnc = () => fn.apply( this, arguments );
+
+    clearTimeout(timeout);
+    timeout = setTimeout(fnc, time);
+  }
+}

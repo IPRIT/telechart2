@@ -6,13 +6,13 @@ import { LabelButtons } from '../ui/LabelButtons';
 import { DataLabel } from '../ui/DataLabel';
 
 import {
-  addClass,
+  addClass, animationTimeout,
   ChartThemes,
   ChartVariables, clampNumber,
-  createElement, cssText, DprSampling, getDevicePixelRatio, getElementOffset,
+  createElement, cssText, debounce, DprSampling, getDevicePixelRatio, getElementOffset,
   getElementWidth, interpolateThemeClass,
-  isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported, passiveIfSupported, removeClass,
-  resolveElement, setAttributes, throttle
+  isOffscreenCanvasSupported, isTouchEventsSupported, isTransformSupported, months, passiveIfSupported, removeClass,
+  resolveElement, setAttributes, throttle, zeroFill
 } from '../../utils';
 
 const NavUIComponent = {
@@ -88,6 +88,11 @@ export class TelechartApi extends EventEmitter {
    * @type {number[]}
    */
   navigationRange = [ 0, 1 ];
+
+  /**
+   * @type {number[]}
+   */
+  navigationRangeX = null;
 
   /**
    * @param {string | Element} mountTo
@@ -188,6 +193,10 @@ export class TelechartApi extends EventEmitter {
 
     this._sendMainCanvasEventThrottled = throttle( this._sendMainCanvasEvent.bind( this ), 10 );
     this._sendNavUICanvasEventThrottled = this._sendNavUICanvasEvent.bind( this );
+
+    if (!this._updateRangeViewThrottled) {
+      this._updateRangeViewThrottled = debounce( this.updateRangeView.bind( this ), 50 );
+    }
   }
 
   tick (deltaTime) {
@@ -262,8 +271,28 @@ export class TelechartApi extends EventEmitter {
     }
   }
 
-  setNavigationRange (range) {
+  setNavigationRange (range, rangeX) {
     this.navigationRange = range;
+    this.navigationRangeX = rangeX;
+
+    if (!this._updateRangeViewThrottled) {
+      this._updateRangeViewThrottled = debounce( this.updateRangeView.bind( this ), 50 );
+    }
+
+    this._updateRangeViewThrottled();
+  }
+
+  updateRangeView () {
+    const text = this._getRangeViewText( this.navigationRangeX );
+    const updClassName = 'telechart2-range-view_updating';
+
+    addClass( this.rangeViewElement, updClassName );
+
+    return animationTimeout( 100 ).then(_ => {
+      this.rangeViewElement.innerHTML = text;
+
+      removeClass( this.rangeViewElement, updClassName );
+    });
   }
 
   addEventListeners () {
@@ -611,6 +640,7 @@ export class TelechartApi extends EventEmitter {
     });
 
     this._createTitle( header );
+    this._createViewRange( header );
 
     container.appendChild( header );
 
@@ -633,6 +663,58 @@ export class TelechartApi extends EventEmitter {
     container.appendChild( title );
 
     return title;
+  }
+
+  _createViewRange (container) {
+    const rangeViewElement = this.rangeViewElement = createElement('span', {
+      attrs: {
+        class: 'telechart2-range-view'
+      }
+    }, this._getRangeViewText( this.navigationRangeX ));
+
+    container.appendChild( rangeViewElement );
+
+    return rangeViewElement;
+  }
+
+  /**
+   * @param {Array<number>} rangeX
+   * @return {string}
+   * @private
+   */
+  _getRangeViewText (rangeX) {
+    if (!rangeX) {
+      return '';
+    }
+
+    const firstDate = new Date( rangeX[0] );
+    const secondDate = new Date( rangeX[1] );
+
+    const f = this._toDateString( firstDate, true );
+    const s = this._toDateString( secondDate, true );
+
+    if (f === s) {
+      return s;
+    }
+
+    return f + ' - ' + s;
+  }
+
+  /**
+   * @param {Date} date
+   * @param withYear
+   * @return {string}
+   * @private
+   */
+  _toDateString (date, withYear = true) {
+    const monthText = withYear
+      ? months[ date.getMonth() ].substr(0, 3)
+      : months[ date.getMonth() ];
+    const yearText = withYear ? ' ' + date.getFullYear() : '';
+
+    return zeroFill( date.getDate() )
+      + ' ' + monthText
+      + yearText;
   }
 
   /**
@@ -878,8 +960,8 @@ export class TelechartApi extends EventEmitter {
       });
 
       eventEmitter.on(TelechartWorkerEvents.SET_NAVIGATION_RANGE, ev => {
-        const { range } = ev.data;
-        this.setNavigationRange( range );
+        const { range, rangeX } = ev.data;
+        this.setNavigationRange( range, rangeX );
       });
     }
   }

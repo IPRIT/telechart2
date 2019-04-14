@@ -91,19 +91,16 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {number}
-   * @private
    */
   viewportPixelX = 0;
 
   /**
    * @type {number}
-   * @private
    */
   viewportPixelY = 0;
 
   /**
    * @type {number}
-   * @private
    */
   viewportPixelY2 = 0;
 
