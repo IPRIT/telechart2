@@ -23,15 +23,19 @@
       font-family: 'Roboto', Arial, sans-serif;
       margin: 0;
       overflow-x: hidden;
+      transition: opacity .3s ease-in-out;
     }
     .demo-telechart {
       max-width: 700px;
       margin: 0 auto;
       padding-bottom: 24px;
     }
+    .not-ready {
+      opacity: 0;
+    }
   </style>
 </head>
-<body>
+<body class="not-ready">
 
   <div class="demo-telechart" id="telechart-1"></div>
   <div class="demo-telechart" id="telechart-2"></div>

@@ -153,7 +153,7 @@ export class Series extends EventEmitter {
    * Initializes series with options
    */
   initialize () {
-    this.updateGlobalExtremes();
+    // this.updateGlobalExtremes();
   }
 
   /**

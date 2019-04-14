@@ -494,6 +494,8 @@ export class Telechart2 extends EventEmitter {
   _createChart () {
     this._chart = new Chart( this, this.options );
     this._chart.initialize();
+
+    this._chartSumTree = this._chart.stackedSumTree;
   }
 
   /**
@@ -502,6 +504,9 @@ export class Telechart2 extends EventEmitter {
   _createNavigatorChart () {
     this._navigatorChart = new NavigatorChart( this, this.options );
     this._navigatorChart.initialize();
+
+    // reusing stacked sum tree for navigator
+    this._navigatorChart.stackedSumTree = this._chartSumTree;
   }
 
   /**

@@ -38,7 +38,10 @@ if (query && typeof query.oc !== 'undefined') {
   window.t2_foc = query.oc === 'true';
 }
 
-for (let i = 0; i < sources.length; ++i) {
+let fromIndex = 0;
+let toIndex = sources.length;
+
+for (let i = fromIndex; i < toIndex; ++i) {
   const source = sources[ i ];
   createChart( source, i );
 }
@@ -46,6 +49,12 @@ for (let i = 0; i < sources.length; ++i) {
 startAnimating();
 
 updatePageTheme();
+
+window.addEventListener('load', ev => {
+  animationTimeout().then(_ => {
+    removeClass( document.body, 'not-ready' );
+  });
+});
 
 let buttonContent = `
   <span class="text-switcher">

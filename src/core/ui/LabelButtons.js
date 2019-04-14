@@ -99,11 +99,13 @@ export class LabelButtons extends EventEmitter {
    * @private
    */
   _createButtons () {
-    this.lines.forEach((line, index) => {
-      this.container.appendChild(
-        this._createButton( line, index )
-      )
-    });
+    setTimeout(_ => {
+      this.lines.forEach((line, index) => {
+        this.container.appendChild(
+          this._createButton( line, index )
+        )
+      });
+    }, 50)
   }
 
   /**

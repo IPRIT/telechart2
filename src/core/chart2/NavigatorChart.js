@@ -106,19 +106,6 @@ export class NavigatorChart extends BaseChart {
     this._updateNavigatorDimensions();
 
     this.sendRangeToApi();
-
-    if (Math.random() > .7) {
-      const f = _ => {
-        animationTimeout( Math.random() * 200 + 500 ).then(_ => {
-          const min = Math.random() * .4;
-          const max = min + Math.random() * ( 1 - min );
-          this.animateNavigationRangeTo( min, max );
-          f();
-        });
-      };
-
-      // f();
-    }
   }
 
   update (deltaTime) {

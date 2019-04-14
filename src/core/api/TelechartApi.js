@@ -6,7 +6,7 @@ import { LabelButtons } from '../ui/LabelButtons';
 import { DataLabel } from '../ui/DataLabel';
 
 import {
-  addClass, animationTimeout,
+  addClass, animationTimeout, arraysEqual,
   ChartThemes,
   ChartVariables, clampNumber,
   createElement, cssText, debounce, DprSampling, getDevicePixelRatio, getElementOffset,
@@ -272,8 +272,14 @@ export class TelechartApi extends EventEmitter {
   }
 
   setNavigationRange (range, rangeX) {
+    const oldRangeX = this.navigationRangeX;
+
     this.navigationRange = range;
     this.navigationRangeX = rangeX;
+
+    if (arraysEqual( oldRangeX, rangeX )) {
+      return;
+    }
 
     if (!this._updateRangeViewThrottled) {
       this._updateRangeViewThrottled = debounce( this.updateRangeView.bind( this ), 50 );
@@ -283,7 +289,9 @@ export class TelechartApi extends EventEmitter {
   }
 
   updateRangeView () {
-    const text = this._getRangeViewText( this.navigationRangeX );
+    const chartWidth = this.environmentOptions && this.environmentOptions.canvasWidth || 500;
+
+    const text = this._getRangeViewText( this.navigationRangeX, chartWidth < 400 );
     const updClassName = 'telechart2-range-view_updating';
 
     addClass( this.rangeViewElement, updClassName );
@@ -679,10 +687,11 @@ export class TelechartApi extends EventEmitter {
 
   /**
    * @param {Array<number>} rangeX
+   * @param short
    * @return {string}
    * @private
    */
-  _getRangeViewText (rangeX) {
+  _getRangeViewText (rangeX, short = false) {
     if (!rangeX) {
       return '';
     }
@@ -690,8 +699,8 @@ export class TelechartApi extends EventEmitter {
     const firstDate = new Date( rangeX[0] );
     const secondDate = new Date( rangeX[1] );
 
-    const f = this._toDateString( firstDate, true );
-    const s = this._toDateString( secondDate, true );
+    const f = this._toDateString( firstDate, short );
+    const s = this._toDateString( secondDate, short );
 
     if (f === s) {
       return s;
@@ -702,15 +711,15 @@ export class TelechartApi extends EventEmitter {
 
   /**
    * @param {Date} date
-   * @param withYear
+   * @param short
    * @return {string}
    * @private
    */
-  _toDateString (date, withYear = true) {
-    const monthText = withYear
+  _toDateString (date, short = true) {
+    const monthText = short
       ? months[ date.getMonth() ].substr(0, 3)
       : months[ date.getMonth() ];
-    const yearText = withYear ? ' ' + date.getFullYear() : '';
+    const yearText = ' ' + date.getFullYear();
 
     return zeroFill( date.getDate() )
       + ' ' + monthText

@@ -277,6 +277,11 @@ export class BaseChart extends EventEmitter {
   isStacked = false;
 
   /**
+   * @type {Array<number>}
+   */
+  stackedSumTree = [];
+
+  /**
    * @param {Telechart2} context
    * @param {Object} options
    */
@@ -297,6 +302,10 @@ export class BaseChart extends EventEmitter {
     if (this.isMainChart) {
       this.initializeAxisY();
       this.initializeAxisX();
+    }
+
+    if (this.isMainChart && this.isStacked) {
+      this.initializeStackedSumTree();
     }
   }
 
@@ -511,6 +520,34 @@ export class BaseChart extends EventEmitter {
 
       this.series.push( series );
     }
+  }
+
+  initializeStackedSumTree () {
+    const maxN = 2 ** this.series.length;
+    const lines = this.series;
+    const xAxis = this._xAxis;
+    const chunkSize = xAxis.length;
+    const yAxes = lines.map( line => line.yAxis );
+    const sumTree = [];
+    let k = 0;
+
+    for (let currentN = 0; currentN < maxN; ++currentN) {
+      for (let columnIndex = 0; columnIndex < chunkSize; ++columnIndex) {
+        let sum = 0;
+
+        for (let bit = 1, len = lines.length; bit <= len; ++bit) {
+          if (( currentN & bit ) === 0) {
+            continue;
+          }
+
+          sum += yAxes[ bit - 1 ][ columnIndex ];
+        }
+
+        sumTree[ k++ ] = sum;
+      }
+    }
+
+    this.stackedSumTree = sumTree;
   }
 
   /**
