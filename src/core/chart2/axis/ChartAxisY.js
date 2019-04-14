@@ -30,18 +30,25 @@ export class ChartAxisY extends ChartAxis {
 
     context.clearRect( 0, 0, this.chart.chartWidth, this.chart.chartHeight + this.chart.seriesOffsetTop + 1 );
 
-    this.drawLeft( context, true );
+    const firstLine = this.chart.series[ 0 ];
+    const drawAxes = !this.isDoubleAxis || firstLine.isVisible;
+
+    this.drawLeft( context, drawAxes );
   }
 
   drawLeft (context, drawAxes = false) {
+    const line = this.chart.series[ 0 ];
+
+    if (this.isDoubleAxis && line.opacity <= 0) {
+      return;
+    }
+
     const textColor = this.textColorLeft;
     const textColorAlpha = this.textColorLeftAlpha;
     const axesColor = this.axesColor;
     const axesColorAlpha = this.axesColorAlpha;
 
     const fontSize = this.fontSize;
-
-    const line = this.chart.series[ 0 ];
 
     // values
     context.font = `${fontSize}px Arial`;
@@ -120,8 +127,8 @@ export class ChartAxisY extends ChartAxis {
   initializeWrapper (value) {
     return {
       id: AUTOINCREMENT_ID++,
-      value, //: this._roundValue( value ),
-      formattedValue: this._formatNumber( value ),
+      value, //: this.roundValue( value ),
+      formattedValue: this.formatNumber( value ),
       opacity: 0,
       startOpacity: 0,
       animation: null,
@@ -188,15 +195,14 @@ export class ChartAxisY extends ChartAxis {
    * @return {number}
    * @private
    */
-  _roundValue (value) {
+  roundValue (value) {
     return ~~( value + .5 );
   }
 
   /**
    * @param {number} value
-   * @private
    */
-  _formatNumber (value) {
+  formatNumber (value) {
     const v = Math.abs( ensureNumber( value ) );
     let symbol = '';
 

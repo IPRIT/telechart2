@@ -14,6 +14,7 @@ import {
   ensureNumber,
   isDate,
 } from '../../utils';
+import { ChartAxisY2 } from './axis/ChartAxisY2';
 
 let CHART_ID = 1;
 
@@ -80,7 +81,7 @@ export class BaseChart extends EventEmitter {
   /**
    * @type {number}
    */
-  _viewportPointsStep = 1;
+  viewportPointsStep = 1;
 
   /**
    * @type {number}
@@ -92,13 +93,19 @@ export class BaseChart extends EventEmitter {
    * @type {number}
    * @private
    */
-  _viewportPixelX = 0;
+  viewportPixelX = 0;
 
   /**
    * @type {number}
    * @private
    */
-  _viewportPixelY = 0;
+  viewportPixelY = 0;
+
+  /**
+   * @type {number}
+   * @private
+   */
+  viewportPixelY2 = 0;
 
   /**
    * @type {number}
@@ -132,15 +139,23 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {number}
-   * @private
    */
-  _localMinY = 0;
+  localMinY = 0;
 
   /**
    * @type {number}
-   * @private
    */
-  _localMaxY = 0;
+  localMaxY = 0;
+
+  /**
+   * @type {number}
+   */
+  localMinY2 = 0;
+
+  /**
+   * @type {number}
+   */
+  localMaxY2 = 0;
 
   /**
    * @type {number}
@@ -156,27 +171,43 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {number}
-   * @private
    */
-  _currentLocalMinY = null;
+  currentLocalMinY = null;
 
   /**
    * @type {number}
-   * @private
    */
-  _currentLocalMaxY = null;
+  currentLocalMaxY = null;
+
+  /**
+   * @type {number}
+   */
+  currentLocalMinY2 = null;
+
+  /**
+   * @type {number}
+   */
+  currentLocalMaxY2 = null;
 
   /**
    * @type {Tween}
-   * @private
    */
-  _minMaxYAnimation = null;
+  minMaxYAnimation = null;
 
   /**
    * @type {number}
-   * @private
    */
-  _minMaxYAnimationSign = null;
+  minMaxYAnimationSign = null;
+
+  /**
+   * @type {Tween}
+   */
+  minMaxYAnimation2 = null;
+
+  /**
+   * @type {number}
+   */
+  minMaxYAnimationSign2 = null;
 
   /**
    * @type {Tween}
@@ -212,6 +243,12 @@ export class BaseChart extends EventEmitter {
   _yAxisView = null;
 
   /**
+   * @type {ChartAxisY2}
+   * @private
+   */
+  _yAxisView2 = null;
+
+  /**
    * @type {ChartAxisX}
    * @private
    */
@@ -229,19 +266,16 @@ export class BaseChart extends EventEmitter {
 
   /**
    * @type {boolean}
-   * @private
    */
   isYScaled = false;
 
   /**
    * @type {boolean}
-   * @private
    */
   isPercentage = false;
 
   /**
    * @type {boolean}
-   * @private
    */
   isStacked = false;
 
@@ -263,7 +297,7 @@ export class BaseChart extends EventEmitter {
     this.setInitialRange();
     this.approximateViewportPoints();
 
-    if (this.isChart) {
+    if (this.isMainChart) {
       this.initializeAxisY();
       this.initializeAxisX();
     }
@@ -276,11 +310,24 @@ export class BaseChart extends EventEmitter {
     let redrawChart = false;
     let redrawAxis = false;
 
-    const minMaxYAnimation = this._minMaxYAnimation;
-    const extremesUpdated = minMaxYAnimation && minMaxYAnimation.isRunning;
+    const minMaxYAnimation = this.minMaxYAnimation;
+    let extremesUpdated = false;
 
-    if (extremesUpdated) {
-      this._minMaxYAnimation.update( deltaTime );
+    if (minMaxYAnimation && minMaxYAnimation.isRunning) {
+      this.minMaxYAnimation.update( deltaTime );
+
+      extremesUpdated = true;
+      redrawChart = true;
+      redrawAxis = true;
+    }
+
+    // 2 y axes
+    const minMaxYAnimation2 = this.minMaxYAnimation2;
+
+    if (minMaxYAnimation2 && minMaxYAnimation2.isRunning) {
+      this.minMaxYAnimation2.update( deltaTime );
+
+      extremesUpdated = true;
       redrawChart = true;
       redrawAxis = true;
     }
@@ -321,6 +368,10 @@ export class BaseChart extends EventEmitter {
       if (extremesUpdated || hasOpacityAnimation) {
         line.requestPathUpdate();
         redrawChart = true;
+
+        if (this.isYScaled) {
+          redrawAxis = true;
+        }
       }
 
       line.update( deltaTime );
@@ -332,6 +383,14 @@ export class BaseChart extends EventEmitter {
       }
 
       this._yAxisView.update( deltaTime );
+    }
+
+    if (this._yAxisView2) {
+      if (redrawAxis) {
+        this._yAxisView2.requestRedraw();
+      }
+
+      this._yAxisView2.update( deltaTime );
     }
 
     if (this._xAxisView) {
@@ -352,9 +411,31 @@ export class BaseChart extends EventEmitter {
       this.redrawChartNeeded = false;
     }
 
+    let renderYAxis = this.telechart.forceRedraw;
+
     if (this._yAxisView) {
-      // clear rect inside
-      this._yAxisView.render();
+      if (this._yAxisView.redrawNeeded) {
+        renderYAxis = true;
+      }
+    }
+
+    if (this._yAxisView2) {
+      if (this._yAxisView2.redrawNeeded) {
+        renderYAxis = true;
+      }
+    }
+
+    if (renderYAxis) {
+      if (this._yAxisView) {
+        // clear rect inside
+        this._yAxisView.requestRedraw();
+        this._yAxisView.render();
+      }
+
+      if (this._yAxisView2) {
+        this._yAxisView2.requestRedraw();
+        this._yAxisView2.render();
+      }
     }
 
     if (this._xAxisView) {
@@ -428,7 +509,7 @@ export class BaseChart extends EventEmitter {
       };
 
       // create instance
-      const series = new Series( this, settings );
+      const series = new Series( this, settings, i );
       series.initialize();
 
       this.series.push( series );
@@ -443,6 +524,13 @@ export class BaseChart extends EventEmitter {
     yAxisView.initialize();
 
     this._yAxisView = yAxisView;
+
+    if (this.isYScaled) {
+      const yAxisView2 = new ChartAxisY2( this, this.isYScaled );
+      yAxisView2.initialize();
+
+      this._yAxisView2 = yAxisView2;
+    }
   }
 
   /**
@@ -549,6 +637,7 @@ export class BaseChart extends EventEmitter {
     if (updateExtremes) {
       // update local extremes on chart level
       this.updateLocalExtremes();
+      this.updateLocalExtremes2();
     }
 
     // recompute pixel values
@@ -560,6 +649,10 @@ export class BaseChart extends EventEmitter {
     }
 
     this.emit( ChartEvents.REDRAW_CURSOR );
+
+    if (this.isMainChart) {
+      this._setInsideChartState( false, true );
+    }
   }
 
   /**
@@ -600,7 +693,7 @@ export class BaseChart extends EventEmitter {
       // [ startIndex, endIndex ]
       this._viewportPointsIndexes[ 0 ] = startIndex;
       this._viewportPointsIndexes[ 1 ] = endIndex;
-      this._viewportPointsStep = 1;
+      this.viewportPointsStep = 1;
 
       // all work done here
       return;
@@ -611,7 +704,7 @@ export class BaseChart extends EventEmitter {
       ? Math.max(0, ( endIndex - startIndex ) / this._xAxis.length )
       : 1;
 
-    let groupingDistanceLimitX = boostScale * this._groupingPixels * this._viewportPixelX;
+    let groupingDistanceLimitX = boostScale * this._groupingPixels * this.viewportPixelX;
 
     let groupStartIndex = startIndex;
 
@@ -649,7 +742,7 @@ export class BaseChart extends EventEmitter {
 
     this._viewportPointsIndexes[ 0 ] = startIndex;
     this._viewportPointsIndexes[ 1 ] = endIndex;
-    this._viewportPointsStep = step;
+    this.viewportPointsStep = step;
   }
 
   /**
@@ -657,20 +750,13 @@ export class BaseChart extends EventEmitter {
    */
   updateLocalExtremes () {
     const isLineChart = this.isLineChart;
+    const isYScaled = this.isYScaled;
 
     let localMinY = isLineChart ? Infinity : 0;
     let localMaxY = 0;
-    let globalMinY = isLineChart ? Infinity : 0;
-    let globalMaxY = 0;
 
-    this.eachSeries(line => {
-      if (globalMinY > line.globalMinY) {
-        globalMinY = line.globalMinY;
-      }
-      if (globalMaxY < line.globalMaxY) {
-        globalMaxY = line.globalMaxY;
-      }
-
+    if (isYScaled) {
+      const line = this.series[ 0 ];
       if (!line.isVisible) {
         // find among visible series
         return;
@@ -682,30 +768,41 @@ export class BaseChart extends EventEmitter {
       if (localMaxY < line.localMaxY) {
         localMaxY = line.localMaxY;
       }
-    });
+    } else {
+      this.eachSeries(line => {
+        if (!line.isVisible) {
+          // find among visible series
+          return;
+        }
 
-    let oldLocalMinY = this._localMinY;
-    let oldLocalMaxY = this._localMaxY;
+        if (localMinY > line.localMinY) {
+          localMinY = line.localMinY;
+        }
+        if (localMaxY < line.localMaxY) {
+          localMaxY = line.localMaxY;
+        }
+      });
+    }
 
-    this._localMinY = localMinY;
-    this._localMaxY = localMaxY;
+    let oldLocalMinY = this.localMinY;
+    let oldLocalMaxY = this.localMaxY;
 
-    this._globalMinY = globalMinY;
-    this._globalMaxY = globalMaxY;
+    this.localMinY = localMinY;
+    this.localMaxY = localMaxY;
 
     let updateAnimation = false;
 
-    if (typeof this._currentLocalMinY !== 'number') {
+    if (typeof this.currentLocalMinY !== 'number') {
       // set initial local min y
-      this._currentLocalMinY = this._localMinY;
-    } else if (this._localMinY !== oldLocalMinY) {
+      this.currentLocalMinY = this.localMinY;
+    } else if (this.localMinY !== oldLocalMinY) {
       updateAnimation = true;
     }
 
-    if (typeof this._currentLocalMaxY !== 'number') {
+    if (typeof this.currentLocalMaxY !== 'number') {
       // set initial local max y
-      this._currentLocalMaxY = this._localMaxY;
-    } else if (this._localMaxY !== oldLocalMaxY) {
+      this.currentLocalMaxY = this.localMaxY;
+    } else if (this.localMaxY !== oldLocalMaxY) {
       updateAnimation = true;
     }
 
@@ -714,6 +811,64 @@ export class BaseChart extends EventEmitter {
 
       if (this._yAxisView) {
         this._yAxisView.requestUpdateAnimations();
+      }
+
+      if (this._yAxisView2) {
+        this._yAxisView2.requestUpdateAnimations();
+      }
+    }
+  }
+
+  updateLocalExtremes2 () {
+    const isLineChart = this.isLineChart;
+
+    let localMinY2 = isLineChart ? Infinity : 0;
+    let localMaxY2 = 0;
+
+    const line = this.series[ 1 ];
+    if (!line || !line.isVisible) {
+      // find among visible series
+      return;
+    }
+
+    if (localMinY2 > line.localMinY) {
+      localMinY2 = line.localMinY;
+    }
+    if (localMaxY2 < line.localMaxY) {
+      localMaxY2 = line.localMaxY;
+    }
+
+    let oldLocalMinY2 = this.localMinY2;
+    let oldLocalMaxY2 = this.localMaxY2;
+
+    this.localMinY2 = localMinY2;
+    this.localMaxY2 = localMaxY2;
+
+    let updateAnimation = false;
+
+    if (typeof this.currentLocalMinY2 !== 'number') {
+      // set initial local min y
+      this.currentLocalMinY2 = this.localMinY2;
+    } else if (this.localMinY2 !== oldLocalMinY2) {
+      updateAnimation = true;
+    }
+
+    if (typeof this.currentLocalMaxY2 !== 'number') {
+      // set initial local max y
+      this.currentLocalMaxY2 = this.localMaxY2;
+    } else if (this.localMaxY2 !== oldLocalMaxY2) {
+      updateAnimation = true;
+    }
+
+    if (updateAnimation) {
+      this._updateOrCreateMinMaxYAnimation2();
+
+      if (this._yAxisView) {
+        this._yAxisView.requestUpdateAnimations();
+      }
+
+      if (this._yAxisView2) {
+        this._yAxisView2.requestUpdateAnimations();
       }
     }
   }
@@ -732,7 +887,16 @@ export class BaseChart extends EventEmitter {
    * @param maxY
    * @return {number}
    */
-  computeViewportPixelY (minY = this._currentLocalMinY, maxY = this._currentLocalMaxY) {
+  computeViewportPixelY (minY = this.currentLocalMinY, maxY = this.currentLocalMaxY) {
+    return ( maxY - minY ) / this.chartHeight;
+  }
+
+  /**
+   * @param minY
+   * @param maxY
+   * @return {number}
+   */
+  computeViewportPixelY2 (minY = this.currentLocalMinY2, maxY = this.currentLocalMaxY2) {
     return ( maxY - minY ) / this.chartHeight;
   }
 
@@ -740,8 +904,12 @@ export class BaseChart extends EventEmitter {
    * Updates pixel value for each axis
    */
   updateViewportPixel () {
-    this._viewportPixelX = this._viewportDistance / this.chartWidth;
-    this._viewportPixelY = this.currentLocalExtremeDifference / this.chartHeight;
+    this.viewportPixelX = this._viewportDistance / this.chartWidth;
+    this.viewportPixelY = this.computeViewportPixelY();
+
+    if (this.isYScaled) {
+      this.viewportPixelY2 = this.computeViewportPixelY2();
+    }
   }
 
   /**
@@ -777,6 +945,10 @@ export class BaseChart extends EventEmitter {
       this._yAxisView.onChartResize();
     }
 
+    if (this._yAxisView2) {
+      this._yAxisView2.onChartResize();
+    }
+
     if (this._xAxisView) {
       this._xAxisView.onChartResize();
     }
@@ -793,6 +965,10 @@ export class BaseChart extends EventEmitter {
   onSeriesVisibleChange (line) {
     // find new extremes and scale
     this.updateLocalExtremes();
+
+    if (this.isYScaled) {
+      this.updateLocalExtremes2();
+    }
 
     this.emit( ChartEvents.SERIES_VISIBLE_CHANGE, line );
   }
@@ -923,7 +1099,7 @@ export class BaseChart extends EventEmitter {
    * @return {number}
    */
   projectXToCanvas (x) {
-    return this.toRelativeX( x ) / this._viewportPixelX;
+    return this.toRelativeX( x ) / this.viewportPixelX;
   }
 
   /**
@@ -931,7 +1107,16 @@ export class BaseChart extends EventEmitter {
    * @return {number}
    */
   projectYToCanvas (y) {
-    const canvasY = this.seriesOffsetTop + this.chartHeight - ( y - this._currentLocalMinY ) / this._viewportPixelY;
+    const canvasY = this.seriesOffsetTop + this.chartHeight - ( y - this.currentLocalMinY ) / this.viewportPixelY;
+    return clampNumber( canvasY || 0, -1e6, 1e6 );
+  }
+
+  /**
+   * @param {number} y
+   * @return {number}
+   */
+  projectYToCanvas2 (y) {
+    const canvasY = this.seriesOffsetTop + this.chartHeight - ( y - this.currentLocalMinY2 ) / this.viewportPixelY2;
     return clampNumber( canvasY || 0, -1e6, 1e6 );
   }
 
@@ -973,7 +1158,7 @@ export class BaseChart extends EventEmitter {
   /**
    * @return {boolean}
    */
-  get isChart () {
+  get isMainChart () {
     return this._type === ChartTypes.chart;
   }
 
@@ -1008,20 +1193,6 @@ export class BaseChart extends EventEmitter {
   /**
    * @return {number}
    */
-  get viewportPixelX () {
-    return this._viewportPixelX;
-  }
-
-  /**
-   * @return {number}
-   */
-  get viewportPixelY () {
-    return this._viewportPixelY;
-  }
-
-  /**
-   * @return {number}
-   */
   get viewportPadding () {
     return this._viewportPadding;
   }
@@ -1030,7 +1201,14 @@ export class BaseChart extends EventEmitter {
    * @return {number}
    */
   get localExtremeDifference () {
-    return this._localMaxY - this._localMinY;
+    return this.localMaxY - this.localMinY;
+  }
+
+  /**
+   * @return {number}
+   */
+  get localExtremeDifference2 () {
+    return this.localMaxY2 - this.localMinY2;
   }
 
   /**
@@ -1044,21 +1222,14 @@ export class BaseChart extends EventEmitter {
    * @return {number}
    */
   get currentLocalExtremeDifference () {
-    return this._currentLocalMaxY - this._currentLocalMinY;
+    return this.currentLocalMaxY - this.currentLocalMinY;
   }
 
   /**
    * @return {number}
    */
-  get localMinY () {
-    return this._localMinY;
-  }
-
-  /**
-   * @return {number}
-   */
-  get localMaxY () {
-    return this._localMaxY;
+  get currentLocalExtremeDifference2 () {
+    return this.currentLocalMaxY2 - this.currentLocalMinY2;
   }
 
   /**
@@ -1078,20 +1249,6 @@ export class BaseChart extends EventEmitter {
   /**
    * @return {number}
    */
-  get currentLocalMinY () {
-    return this._currentLocalMinY;
-  }
-
-  /**
-   * @return {number}
-   */
-  get currentLocalMaxY () {
-    return this._currentLocalMaxY;
-  }
-
-  /**
-   * @return {number}
-   */
   get chartWidth () {
     return this.telechart.canvasWidth;
   }
@@ -1101,13 +1258,6 @@ export class BaseChart extends EventEmitter {
    */
   get chartHeight () {
     return ChartVariables.mainChartHeight;
-  }
-
-  /**
-   * @return {Tween}
-   */
-  get minMaxYAnimation () {
-    return this._minMaxYAnimation;
   }
 
   /**
@@ -1200,7 +1350,7 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _updateOrCreateMinMaxYAnimation () {
-    if (!this._minMaxYAnimation) {
+    if (!this.minMaxYAnimation) {
       return this._createMinMaxYAnimation();
     }
 
@@ -1208,7 +1358,7 @@ export class BaseChart extends EventEmitter {
     const newLocalExtremeDifference = this.localExtremeDifference;
     const animationSign = currentLocalExtremeDifference < newLocalExtremeDifference;
 
-    if (animationSign !== this._minMaxYAnimationSign) {
+    if (animationSign !== this.minMaxYAnimationSign) {
       return this._createMinMaxYAnimation();
     }
 
@@ -1218,41 +1368,101 @@ export class BaseChart extends EventEmitter {
   /**
    * @private
    */
+  _updateOrCreateMinMaxYAnimation2 () {
+    if (!this.minMaxYAnimation2) {
+      return this._createMinMaxYAnimation2();
+    }
+
+    const currentLocalExtremeDifference = this.currentLocalExtremeDifference2;
+    const newLocalExtremeDifference = this.localExtremeDifference2;
+    const animationSign = currentLocalExtremeDifference < newLocalExtremeDifference;
+
+    if (animationSign !== this.minMaxYAnimationSign2) {
+      return this._createMinMaxYAnimation2();
+    }
+
+    this._patchMinMaxYAnimation2();
+  }
+
+  /**
+   * @private
+   */
   _createMinMaxYAnimation () {
-    if (this._minMaxYAnimation) {
-      this._minMaxYAnimation.cancel();
+    if (this.minMaxYAnimation) {
+      this.minMaxYAnimation.cancel();
     }
 
     this._updateMinMaxAnimationSign();
 
-    this._minMaxYAnimation = new Tween(this, [
-      '_currentLocalMinY',
-      '_currentLocalMaxY'
+    this.minMaxYAnimation = new Tween(this, [
+      'currentLocalMinY',
+      'currentLocalMaxY'
     ], [
-      this._localMinY,
-      this._localMaxY
+      this.localMinY,
+      this.localMaxY
     ], {
       duration: 300,
       timingFunction: 'easeInOutQuad'
     });
 
     const onFinished = _ => {
-      this._minMaxYAnimation = null;
+      this.minMaxYAnimation = null;
     };
 
-    this._minMaxYAnimation.on( TweenEvents.COMPLETE, onFinished );
-    this._minMaxYAnimation.on( TweenEvents.CANCELLED, onFinished );
+    this.minMaxYAnimation.on( TweenEvents.COMPLETE, onFinished );
+    this.minMaxYAnimation.on( TweenEvents.CANCELLED, onFinished );
 
-    this._minMaxYAnimation.start();
+    this.minMaxYAnimation.start();
+  }
+
+  /**
+   * @private
+   */
+  _createMinMaxYAnimation2 () {
+    if (this.minMaxYAnimation2) {
+      this.minMaxYAnimation2.cancel();
+    }
+
+    this._updateMinMaxAnimationSign2();
+
+    this.minMaxYAnimation2 = new Tween(this, [
+      'currentLocalMinY2',
+      'currentLocalMaxY2'
+    ], [
+      this.localMinY2,
+      this.localMaxY2
+    ], {
+      duration: 300,
+      timingFunction: 'easeInOutQuad'
+    });
+
+    const onFinished = _ => {
+      this.minMaxYAnimation2 = null;
+    };
+
+    this.minMaxYAnimation2.on( TweenEvents.COMPLETE, onFinished );
+    this.minMaxYAnimation2.on( TweenEvents.CANCELLED, onFinished );
+
+    this.minMaxYAnimation2.start();
   }
 
   /**
    * @private
    */
   _patchMinMaxYAnimation () {
-    this._minMaxYAnimation.patchAnimation([
-      this._localMinY,
-      this._localMaxY
+    this.minMaxYAnimation.patchAnimation([
+      this.localMinY,
+      this.localMaxY
+    ]);
+  }
+
+  /**
+   * @private
+   */
+  _patchMinMaxYAnimation2 () {
+    this.minMaxYAnimation2.patchAnimation([
+      this.localMinY2,
+      this.localMaxY2
     ]);
   }
 
@@ -1260,6 +1470,13 @@ export class BaseChart extends EventEmitter {
    * @private
    */
   _updateMinMaxAnimationSign () {
-    this._minMaxYAnimationSign = this.currentLocalExtremeDifference < this.localExtremeDifference;
+    this.minMaxYAnimationSign = this.currentLocalExtremeDifference < this.localExtremeDifference;
+  }
+
+  /**
+   * @private
+   */
+  _updateMinMaxAnimationSign2 () {
+    this.minMaxYAnimationSign2 = this.currentLocalExtremeDifference2 < this.localExtremeDifference2;
   }
 }

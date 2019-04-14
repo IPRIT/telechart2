@@ -76,6 +76,10 @@ export class Chart extends BaseChart {
       redrawCursors = true;
     }
 
+    if (this.minMaxYAnimation2 && this.minMaxYAnimation2.isRunning) {
+      redrawCursors = true;
+    }
+
     if (redrawCursors) {
       this.requestRedrawCursor();
     }
@@ -90,10 +94,6 @@ export class Chart extends BaseChart {
   redrawChart () {
     const context = this.telechart.mainContext;
     context.clearRect( 0, 0, this.chartWidth, ChartVariables.mainMaxHeight );
-
-    context.lineWidth = 2;
-    context.lineJoin = 'bevel';
-    context.lineCap = 'butt';
 
     for (let i = 0, len = this.series.length; i < len; ++i) {
       this.series[ i ].render( context );
@@ -176,7 +176,15 @@ export class Chart extends BaseChart {
       const y1 = line.yAxis[ upperIndex ];
       const y = y0 + ( y1 - y0 ) * linearScale;
 
-      const canvasY = this.projectYToCanvas( y );
+      let canvasY = 0;
+
+      if (this.isYScaled) {
+        canvasY = i === 0
+          ? this.projectYToCanvas( y )
+          : this.projectYToCanvas2( y );
+      } else {
+        canvasY = this.projectYToCanvas( y );
+      }
 
       context.beginPath();
       context.arc(canvasX, canvasY, markerRadius * line.opacity * this.cursorOpacity, 0, 2 * Math.PI);
@@ -363,6 +371,12 @@ export class Chart extends BaseChart {
         this._onTouchEnd( event );
         break;
     }
+  }
+
+  onResize () {
+    super.onResize();
+
+    this._setInsideChartState( false, true );
   }
 
   /**

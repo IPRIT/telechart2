@@ -335,7 +335,7 @@ export class DataLabel extends EventEmitter {
           color: dataItem.color
         })
       }
-    }, String( this._formatNumber( dataItem.y ) ));
+    }, String( this.formatNumber( dataItem.y ) ));
 
     return createElement('div', {
       attrs: {
@@ -408,7 +408,7 @@ export class DataLabel extends EventEmitter {
     });
 
     // titleElement.innerHTML = dataItem.name;
-    valueElement.innerHTML = String( this._formatNumber( dataItem.y ) );
+    valueElement.innerHTML = String( this.formatNumber( dataItem.y ) );
 
     if (percentageElement) {
       setAttributes(percentageElement, {
@@ -426,7 +426,7 @@ export class DataLabel extends EventEmitter {
    * @return {*}
    * @private
    */
-  _formatNumber (value) {
+  formatNumber (value) {
     return ensureNumber( value ).format();
   }
 

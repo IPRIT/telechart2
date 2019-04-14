@@ -94,6 +94,7 @@ body {
   cursor: pointer;
   transition: opacity $primary-transition, color $primary-transition;
   position: fixed;
+  z-index: 1000;
   bottom: 16px;
   left: 50%;
   transform: translate(-50%, 0);

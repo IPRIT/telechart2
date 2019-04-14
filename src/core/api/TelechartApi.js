@@ -307,6 +307,9 @@ export class TelechartApi extends EventEmitter {
    * @param visibility
    */
   setDataLabelVisibility (visibility) {
+    if (!this.dataLabel) {
+      return;
+    }
     visibility
       ? this.dataLabel.showLabel()
       : this.dataLabel.hideLabel();

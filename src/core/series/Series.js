@@ -1,6 +1,5 @@
 import { EventEmitter } from '../misc/EventEmitter';
 import { arrayMinMax } from '../../utils';
-import { Point } from '../point/Point';
 import { Tween, TweenEvents } from '../animation/Tween';
 import { ChartTypes } from '../chart2/ChartTypes';
 
@@ -91,22 +90,16 @@ export class Series extends EventEmitter {
   _pathUpdateNeeded = false;
 
   /**
-   * @type {Array<Point>}
+   * @type {number}
    * @private
    */
-  _points = [];
+  localMaxY = 0;
 
   /**
    * @type {number}
    * @private
    */
-  _localMaxY = 0;
-
-  /**
-   * @type {number}
-   * @private
-   */
-  _localMinY = 0;
+  localMinY = 0;
 
   /**
    * @type {number}
@@ -126,26 +119,31 @@ export class Series extends EventEmitter {
   opacity = 1;
 
   /**
-   * @type {Tween}
-   * @private
+   * @type {number}
    */
-  _opacityAnimation = null;
+  seriesIndex = -1;
+
+  /**
+   * @type {Tween}
+   */
+  opacityAnimation = null;
 
   /**
    * @type {string}
-   * @private
    */
-  _opacityAnimationType = null;
+  opacityAnimationType = null;
 
   /**
    * @param {Chart | BaseChart} chart
    * @param {*} settings
+   * @param {number} index
    */
-  constructor (chart, settings = {}) {
+  constructor (chart, settings = {}, index) {
     super();
 
     this.chart = chart;
     this.isLineChart = chart.chartType === ChartTypes.chart;
+    this.seriesIndex = index;
 
     this.settings = settings;
     this._parseSettings();
@@ -155,7 +153,6 @@ export class Series extends EventEmitter {
    * Initializes series with options
    */
   initialize () {
-    // this._createPoints();
     this.updateGlobalExtremes();
   }
 
@@ -170,9 +167,9 @@ export class Series extends EventEmitter {
       pathUpdated = true;
     }
 
-    if (this._opacityAnimation
-      && this._opacityAnimation.isRunning) {
-      this._opacityAnimation.update( deltaTime );
+    if (this.opacityAnimation
+      && this.opacityAnimation.isRunning) {
+      this.opacityAnimation.update( deltaTime );
       pathUpdated = true;
     }
 
@@ -201,7 +198,7 @@ export class Series extends EventEmitter {
       return;
     }
 
-    this.drawPathByInterval( context, interval, this.chart._viewportPointsStep );
+    this.drawPathByInterval( context, interval, this.chart.viewportPointsStep );
   }
 
   /**
@@ -212,9 +209,19 @@ export class Series extends EventEmitter {
   drawPathByInterval (context, interval, step = 1) {
     context.globalAlpha = this.opacity;
     context.strokeStyle = this._color;
+    context.lineWidth = this.strokeWidth;
+    context.lineJoin = 'bevel';
+    context.lineCap = 'butt';
     context.beginPath();
 
-    this._drawPathToContext( context, interval, step );
+    if (!this.chart.isYScaled || this.seriesIndex === 0) {
+      this._drawPathToContext(context, interval, step);
+    } else {
+      this._drawPathToContext(context, interval, step, {
+        viewportPixelY: this.chart.viewportPixelY2,
+        currentLocalMinY: this.chart.currentLocalMinY2
+      });
+    }
 
     context.stroke();
   }
@@ -258,8 +265,8 @@ export class Series extends EventEmitter {
       this._yAxis, rangeStartIndex, rangeEndIndex
     );
 
-    this._localMinY = minValue;
-    this._localMaxY = maxValue;
+    this.localMinY = minValue;
+    this.localMaxY = maxValue;
   }
 
   /**
@@ -333,20 +340,6 @@ export class Series extends EventEmitter {
   /**
    * @return {number}
    */
-  get localMinY () {
-    return this._localMinY;
-  }
-
-  /**
-   * @return {number}
-   */
-  get localMaxY () {
-    return this._localMaxY;
-  }
-
-  /**
-   * @return {number}
-   */
   get globalMinY () {
     return this._globalMinY;
   }
@@ -359,24 +352,17 @@ export class Series extends EventEmitter {
   }
 
   /**
-   * @return {string}
-   */
-  get opacityAnimationType () {
-    return this._opacityAnimationType;
-  }
-
-  /**
    * @return {boolean}
    */
   get isShowing () {
-    return this._opacityAnimationType === OpacityAnimationType.showing;
+    return this.opacityAnimationType === OpacityAnimationType.showing;
   }
 
   /**
    * @return {boolean}
    */
   get isHiding () {
-    return this._opacityAnimationType === OpacityAnimationType.hiding;
+    return this.opacityAnimationType === OpacityAnimationType.hiding;
   }
 
   /**
@@ -408,39 +394,25 @@ export class Series extends EventEmitter {
   /**
    * @private
    */
-  _createPoints () {
-    const xAxis = this._xAxis;
-    const yAxis = this._yAxis;
-
-    for (let i = 0; i < xAxis.length; ++i) {
-      this._points.push(
-        new Point( xAxis[ i ], yAxis[ i ] )
-      );
-    }
-  }
-
-  /**
-   * @private
-   */
   _createShowAnimation () {
-    if (this._opacityAnimation
-      && this._opacityAnimationType === OpacityAnimationType.showing) {
+    if (this.opacityAnimation
+      && this.opacityAnimationType === OpacityAnimationType.showing) {
       return;
     }
     this._createOpacityAnimation( 1 );
-    this._opacityAnimationType = OpacityAnimationType.showing;
+    this.opacityAnimationType = OpacityAnimationType.showing;
   }
 
   /**
    * @private
    */
   _createHideAnimation () {
-    if (this._opacityAnimation
-      && this._opacityAnimationType === OpacityAnimationType.hiding) {
+    if (this.opacityAnimation
+      && this.opacityAnimationType === OpacityAnimationType.hiding) {
       return;
     }
     this._createOpacityAnimation( 0 );
-    this._opacityAnimationType = OpacityAnimationType.hiding;
+    this.opacityAnimationType = OpacityAnimationType.hiding;
   }
 
   /**
@@ -448,21 +420,21 @@ export class Series extends EventEmitter {
    * @private
    */
   _createOpacityAnimation (opacity) {
-    this._opacityAnimation = new Tween(this, 'opacity', opacity, {
+    this.opacityAnimation = new Tween(this, 'opacity', opacity, {
       duration: 300,
       timingFunction: 'easeInOutQuad'
     });
 
     const onFinished = _ => {
-      this._opacityAnimation = null;
-      this._opacityAnimationType = null;
+      this.opacityAnimation = null;
+      this.opacityAnimationType = null;
       this.requestPathUpdate();
     };
 
-    this._opacityAnimation.on( TweenEvents.COMPLETE, onFinished );
-    this._opacityAnimation.on( TweenEvents.CANCELLED, onFinished );
+    this.opacityAnimation.on( TweenEvents.COMPLETE, onFinished );
+    this.opacityAnimation.on( TweenEvents.CANCELLED, onFinished );
 
-    this._opacityAnimation.start();
+    this.opacityAnimation.start();
   }
 
   /**

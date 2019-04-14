@@ -49,7 +49,7 @@ export class ChartAxisX extends ChartAxis {
 
     for (let i = 0; i < this.elements.length; ++i) {
       const element = this.elements[ i ];
-      const x = this._computeValuePosition( this.axesValuesMapping[ element.value ] );
+      const x = this._computeValuePosition( this.axesValuesMapping[ element.value ] ) - this.labelWidth;
 
       if (x < leftBorder || x > rightBorder) {
         continue;
@@ -96,7 +96,7 @@ export class ChartAxisX extends ChartAxis {
       this.interval *= .5;
     }
 
-    let currentValue = viewportMaxX - pixelX * minLabelWidth / 2;
+    let currentValue = viewportMaxX; // - pixelX * minLabelWidth / 2;
 
     if (this.axesValues.length > 0) {
       let foundByPrev = false;
