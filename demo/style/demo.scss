@@ -171,4 +171,12 @@ body {
   text-align: center;
   max-width: 600px;
   margin: 0 auto;
+
+  .dark-theme & {
+    color: rgba(255,255,255,.5);
+
+    a {
+      color: white;
+    }
+  }
 }
