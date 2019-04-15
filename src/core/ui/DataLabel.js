@@ -309,7 +309,7 @@ export class DataLabel extends EventEmitter {
         attrs: {
           class: 'telechart2-chart-label__table-item-percentage'
         }
-      }, dataItem.percentage || 0);
+      }, ( dataItem.percentage || 0 ).toFixed( 0 ));
 
       titleElements.push( percentage );
     }
@@ -413,11 +413,11 @@ export class DataLabel extends EventEmitter {
     if (percentageElement) {
       setAttributes(percentageElement, {
         style: cssText({
-          display: this.hasPercentage ? 'flex' : 'none'
+          display: this.hasPercentage ? 'block' : 'none'
         })
       });
 
-      percentageElement.innerHTML = `${dataItem.percentage || 0}%`;
+      percentageElement.innerHTML = `${( dataItem.percentage || 0 ).toFixed( 0 )}%`;
     }
   }
 

@@ -370,6 +370,10 @@ export class Telechart2 extends EventEmitter {
     this.forceRedraw = true;
 
     this.render();
+
+    if (this._chart) {
+      this._chart._updateLabel();
+    }
   }
 
   /**

@@ -101,7 +101,8 @@ export class TelechartApi extends EventEmitter {
   createChart (mountTo, options) {
     const container = resolveElement( mountTo );
 
-    this.hasPercentage = options.series.percentage || false;
+    this.isPercentage = options.series.percentage || false;
+    this.isStacked = options.series.stacked || false;
 
     const root = this.rootElement = this._createRoot( container );
     const header = this.headerElement = this._createHeader( root );
@@ -116,8 +117,8 @@ export class TelechartApi extends EventEmitter {
 
     const mainCanvasRoot = this.mainCanvasRoot = this._createMainCanvasRoot( root );
     mainCanvasRoot.appendChild( mainCanvas );
-    mainCanvasRoot.appendChild( axisCanvas );
     mainCanvasRoot.appendChild( uiCanvas );
+    mainCanvasRoot.appendChild( axisCanvas );
 
     const navigatorRoot = this.navigatorRoot = this._createNavigatorRoot( root );
     navigatorRoot.appendChild( navigationSeriesCanvas );
@@ -181,7 +182,7 @@ export class TelechartApi extends EventEmitter {
         settings
       });
 
-      console.log( this.telechart );
+      // console.log( this.telechart );
     }
 
     this.setTitle( options.title );
@@ -309,13 +310,19 @@ export class TelechartApi extends EventEmitter {
     this._attachNavigatorListeners();
 
     if (this._resizeListener) {
-      window.addEventListener('load', _ => this._resizeListener());
+      window.addEventListener('load', _ => {
+        this._onResize();
+
+        animationTimeout( 1000 ).then(_ => {
+          this._onResize();
+        });
+      });
     }
   }
 
   initializeDataLabel () {
     const dataLabel = new DataLabel( this.rootElement );
-    dataLabel.togglePercentage( this.hasPercentage );
+    dataLabel.togglePercentage( this.isPercentage );
     dataLabel.initialize();
 
     if (this.worker) {
@@ -558,17 +565,17 @@ export class TelechartApi extends EventEmitter {
    * @private
    */
   _getEnvironmentOptions () {
-    const canvasOffset = getElementOffset( this.mainCanvas );
+    const canvasOffset = getElementOffset( this.mainCanvasRoot );
     const canvasWidth = this.mainCanvasWidth;
     const canvasHeight = this.mainCanvasHeight;
     const canvasDpr = getDevicePixelRatio( DprSampling.main );
 
-    const axisCanvasOffset = getElementOffset( this.axisCanvas );
+    const axisCanvasOffset = getElementOffset( this.mainCanvasRoot );
     const axisCanvasWidth = this.axisCanvasWidth;
     const axisCanvasHeight = this.axisCanvasHeight;
     const axisCanvasDpr = getDevicePixelRatio( DprSampling.axis );
 
-    const uiCanvasOffset = getElementOffset( this.uiCanvas );
+    const uiCanvasOffset = getElementOffset( this.mainCanvasRoot );
     const uiCanvasWidth = this.uiCanvasWidth;
     const uiCanvasHeight = this.uiCanvasHeight;
     const uiCanvasDpr = getDevicePixelRatio( DprSampling.ui );

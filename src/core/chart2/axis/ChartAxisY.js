@@ -98,21 +98,27 @@ export class ChartAxisY extends ChartAxis {
 
   computeAxisValues () {
     const chart = this.chart;
+    const isPercentage = this.chart.isPercentage;
     const viewportPixelY = this.chart.computeViewportPixelY( chart.localMinY, chart.localMaxY );
     const viewportMinY = chart.localMinY;
-    const viewportMaxY = chart.localMaxY - (this.chart.seriesOffsetTop + this.fontSize) * viewportPixelY;
+    const viewportMaxY = chart.localMaxY - (
+      isPercentage
+        ? 10
+        : (this.chart.seriesOffsetTop + this.fontSize) * viewportPixelY
+    );
     const distance = viewportMaxY - viewportMinY;
 
     if (!distance) {
       return [];
     }
 
-    let deltaY = distance / 5;
+    const valuesNumber = this.chart.isPercentage ? 4 : 5;
+    let deltaY = distance / valuesNumber;
 
     let currentValue = viewportMinY;
     let result = [ currentValue ];
 
-    for (let i = 0; i < 6; ++i) {
+    for (let i = 0; i <= valuesNumber; ++i) {
       result.unshift( currentValue + deltaY );
       currentValue += deltaY;
     }
@@ -143,13 +149,13 @@ export class ChartAxisY extends ChartAxis {
   }
 
   get textColor () {
-    return this.chart.isBarChart
+    return this.chart.isBarChart || this.chart.isPercentage
       ? this.chart.telechart.themeColors.barAxisTextColorY
       : this.chart.telechart.themeColors.axisTextColor;
   }
 
   get textColorAlpha () {
-    return this.chart.isBarChart
+    return this.chart.isBarChart || this.chart.isPercentage
       ? this.chart.telechart.themeColors.barAxisTextColorAlphaY
       : this.chart.telechart.themeColors.axisTextColorAlpha;
   }

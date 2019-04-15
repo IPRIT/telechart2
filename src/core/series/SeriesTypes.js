@@ -1,5 +1,6 @@
 import { Series } from './Series';
 import { BarSeries } from './BarSeries';
+import { PercentageAreaSeries } from './PercentageAreaSeries';
 
 export const SeriesTypes = {
   x: 'x',
@@ -11,4 +12,5 @@ export const SeriesTypes = {
 export const SeriesTypeMapping = {
   [SeriesTypes.line]: Series,
   [SeriesTypes.bar]: BarSeries,
+  [SeriesTypes.area]: PercentageAreaSeries,
 };

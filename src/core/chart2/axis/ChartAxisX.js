@@ -173,13 +173,13 @@ export class ChartAxisX extends ChartAxis {
 
 
   get textColor () {
-    return this.chart.isBarChart
+    return this.chart.isBarChart || this.chart.isPercentage
       ? this.chart.telechart.themeColors.barAxisTextColorX
       : this.chart.telechart.themeColors.axisTextColor;
   }
 
   get textColorAlpha () {
-    return this.chart.isBarChart
+    return this.chart.isBarChart || this.chart.isPercentage
       ? this.chart.telechart.themeColors.barAxisTextColorAlphaX
       : this.chart.telechart.themeColors.axisTextColorAlpha;
   }

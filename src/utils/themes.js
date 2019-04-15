@@ -43,6 +43,7 @@ export const Colors = {
     barAxisTextColorAlphaX: .5,
     barAxisTextColorY: '#252529',
     barAxisTextColorAlphaY: .5,
+    barAllColor: '#000000',
 
     // cursor mask
     maskColor: '#FFFFFF',
@@ -66,6 +67,7 @@ export const Colors = {
     barAxisTextColorAlphaX: .6,
     barAxisTextColorY: '#ECF2F8',
     barAxisTextColorAlphaY: .5,
+    barAllColor: '#FFFFFF',
 
     // cursor mask
     maskColor: '#242F3E',

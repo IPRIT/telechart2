@@ -19,7 +19,7 @@ eventBus.on(TelechartWorkerEvents.SETUP, ev => {
   const env = ev.data;
 
   telechart = createTelechart( env );
-  console.log( telechart );
+  // console.log( telechart );
 });
 
 eventBus.on(TelechartWorkerEvents.UPDATE_ENVIRONMENT, ev => {

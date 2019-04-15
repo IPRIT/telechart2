@@ -99,6 +99,10 @@ export class LabelButtons extends EventEmitter {
    * @private
    */
   _createButtons () {
+    if (this.lines.length <= 1) {
+      return;
+    }
+
     setTimeout(_ => {
       this.lines.forEach((line, index) => {
         this.container.appendChild(

@@ -168,7 +168,7 @@ export class Chart extends BaseChart {
     const x3 = x + barHalfWidthX - .3;
     const x4 = this.chartWidth + 1;
 
-    const y1 = this.seriesOffsetTop - 1;
+    const y1 = 0;
     const y2 = this.seriesOffsetTop + this.chartHeight + 1;
 
     context.fillRect( x1, y1, x2 - x1, y2 - y1 );
@@ -614,7 +614,7 @@ export class Chart extends BaseChart {
 
     if (!isInside && !immediate) {
       // create short delay for cursor & markers hiding
-      this._markerHideTimeout = setTimeout( change, 2000 );
+      this._markerHideTimeout = setTimeout( change, 1500 );
     } else {
       change();
     }
@@ -629,6 +629,7 @@ export class Chart extends BaseChart {
       ? this._showCursor()
       : this._hideCursor();
 
+    this._cursorShowing = isInside;
     this._toggleDataLabelVisibility( isInside );
   }
 
@@ -685,19 +686,49 @@ export class Chart extends BaseChart {
 
     const index = this.axisCursorPointIndex;
     const x = this.xAxis[ index ];
+    const isBarChart = this.isBarChart;
+    const isPercentage = this.isPercentage;
+    const addAll = isBarChart && this.series.length > 1;
+
+    const sumTreeOffset = this.computeSumTreeChunkOffset();
 
     this.eachSeries(line => {
-      data.push({
+      const y = line.yAxis[ index ];
+
+      const item = {
         color: line.color,
         label: line.label,
         name: line.name,
         visible: line.isVisible,
         x,
-        y: line.yAxis[ index ],
+        y,
         canvasY: this.projectYToCanvas( line.yAxis[ index ] ),
-        canvasX: this.projectXToCanvas( line.xAxis[ index ] )
-      });
+        canvasX: this.projectXToCanvas( line.xAxis[ index ] ),
+      };
+
+      if (isPercentage) {
+        const sum = this.stackedSumTree[ sumTreeOffset + index ];
+        item.percentage = y / sum * 100;
+      }
+
+      data.push( item );
     });
+
+    if (addAll) {
+      const cursorIndex = this.axisCursorPointIndex;
+      const y = this.stackedSumTree[ sumTreeOffset + cursorIndex ];
+
+      data.push({
+        color: this.telechart.themeColors.barAllColor,
+        label: 'all',
+        name: 'All',
+        visible: true,
+        x,
+        y,
+        canvasY: 0,
+        canvasX: 0
+      });
+    }
 
     return data;
   }

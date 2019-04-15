@@ -1,6 +1,6 @@
 import { EventEmitter } from '../misc/EventEmitter';
 import { SeriesTypeMapping, SeriesTypes } from '../series/SeriesTypes';
-import { Series } from '../series/Series';
+import { OpacityAnimationType, Series } from '../series/Series';
 import { Tween, TweenEvents } from '../animation/Tween';
 import { ChartTypes } from './ChartTypes';
 import { ChartEvents } from './events/ChartEvents';
@@ -287,6 +287,16 @@ export class BaseChart extends EventEmitter {
   stackedSumTree = [];
 
   /**
+   * @type {Array<number>}
+   */
+  areaAdditionalSums = [];
+
+  /**
+   * @type {boolean}
+   */
+  areaAdditionalSumsNeeded = false;
+
+  /**
    * @param {Telechart2} context
    * @param {Object} options
    */
@@ -313,6 +323,10 @@ export class BaseChart extends EventEmitter {
       this.initializeAxisY();
       this.initializeAxisX();
     }
+
+    if (this.isPercentage) {
+      this.areaAdditionalSums = Array( this.xAxis.length ).fill(0);
+    }
   }
 
   /**
@@ -321,6 +335,7 @@ export class BaseChart extends EventEmitter {
   update (deltaTime) {
     let redrawChart = false;
     let redrawAxis = false;
+    let addAreaSums = false;
 
     const minMaxYAnimation = this.minMaxYAnimation;
     let extremesUpdated = false;
@@ -380,6 +395,7 @@ export class BaseChart extends EventEmitter {
       if (extremesUpdated || hasOpacityAnimation) {
         line.requestPathUpdate();
         redrawChart = true;
+        addAreaSums = true;
 
         if (this.isYScaled) {
           redrawAxis = true;
@@ -414,6 +430,14 @@ export class BaseChart extends EventEmitter {
     }
 
     this.redrawChartNeeded = this.redrawChartNeeded || redrawChart;
+
+    if (this.isPercentage) {
+      if (addAreaSums) {
+        this.rebuildAdditionalAreaSums();
+      } else {
+        this.areaAdditionalSumsNeeded = false;
+      }
+    }
   }
 
   render () {
@@ -559,6 +583,34 @@ export class BaseChart extends EventEmitter {
     this.stackedSumTree = sumTree;
   }
 
+  rebuildAdditionalAreaSums () {
+    const lines = this.series.filter( line => !!line.opacityAnimation );
+
+    if (!lines.length) {
+      return ( this.areaAdditionalSumsNeeded = false );
+    }
+
+    const [ startIndex, endIndex ] = this._viewportPointsIndexes;
+    const stepIndex = this.viewportPointsStep;
+
+    for (let columnIndex = startIndex; columnIndex <= endIndex; columnIndex += stepIndex) {
+      let addSum = 0;
+
+      for (let lineIndex = 0; lineIndex < lines.length; ++lineIndex) {
+        const line = lines[ lineIndex ];
+        if (line.opacityAnimationType === OpacityAnimationType.hiding) {
+          addSum += line.opacity * line.yAxis[ columnIndex ];
+        } else {
+          addSum -= line.yAxis[ columnIndex ] - line.opacity * line.yAxis[ columnIndex ];
+        }
+      }
+
+      this.areaAdditionalSums[ columnIndex ] = addSum;
+    }
+
+    this.areaAdditionalSumsNeeded = true;
+  }
+
   /**
    * Creates y axis
    */
@@ -698,6 +750,10 @@ export class BaseChart extends EventEmitter {
     }
 
     this.emit( ChartEvents.REDRAW_CURSOR );
+
+    if (this.isMainChart && this._cursorShowing) {
+      this._setInsideChartState( false, true );
+    }
   }
 
   /**
@@ -817,18 +873,10 @@ export class BaseChart extends EventEmitter {
       }
     } else if (isStacked && !isPercentage) {
       const chunkOffset = this.computeSumTreeChunkOffset();
-
       const [ minIndex, maxIndex ] = this._viewportRangeIndexes;
       localMaxY = arrayMax( this.stackedSumTree, chunkOffset + minIndex, chunkOffset + maxIndex );
-
-      /*console.log(
-        'sum:', localMaxY, 'N:',
-        this.computeSumTreeN(),
-        'offset:',
-        chunkOffset,
-        'sub array:',
-        this.stackedSumTree.slice( chunkOffset + minIndex, chunkOffset + maxIndex )
-      );*/
+    } else if (isPercentage) {
+      localMaxY = 110;
     } else {
       this.eachSeries(line => {
         if (!line.isVisible) {

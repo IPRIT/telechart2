@@ -1,6 +1,5 @@
 import { Series } from './Series';
 import { SeriesTypes } from './SeriesTypes';
-import { setAA } from '../../utils';
 
 export class BarSeries extends Series {
 
