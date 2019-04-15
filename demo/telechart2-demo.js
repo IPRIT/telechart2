@@ -6,9 +6,9 @@ import { ChartThemes } from '../src/utils/themes';
 
 import {
   addClass, animationTimeout,
-  ChartThemesColors,
+  ChartThemesColors, ChartVariables,
   createElement, cssText,
-  isBrowserSafari,
+  isBrowserSafari, isOffscreenCanvasSupported,
   parseQueryString,
   removeClass, setAttributes
 } from '../src/utils';
@@ -36,6 +36,24 @@ let currentThemeName = query && query.theme || 'default';
 
 if (query && typeof query.oc !== 'undefined') {
   window.t2_foc = query.oc === 'true';
+}
+
+if (isOffscreenCanvasSupported()) {
+  const hasForceOffscreenState = typeof window.t2_foc !== 'undefined';
+  const forceOffscreenState = hasForceOffscreenState ? t2_foc : null;
+  const isOffscreenCanvas = (
+    forceOffscreenState !== null
+      ? forceOffscreenState
+      : ChartVariables.enableOffscreenCanvas
+  ) && isOffscreenCanvasSupported();
+
+  const demoSettings = document.querySelector( '.demo-settings' );
+  if (isOffscreenCanvas) {
+    demoSettings.innerHTML = `<a href="?oc=false">Disable workers</a> and draw charts in the main thread.`;
+  } else {
+    demoSettings.innerHTML = `Your browser supports OffscreenCanvas & WebWorker technologies.<br>
+    You can <a href="?oc=true">enable</a> drawing in multiple threads with backward compatibility support.`;
+  }
 }
 
 let fromIndex = 0;
