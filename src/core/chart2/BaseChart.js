@@ -531,22 +531,22 @@ export class BaseChart extends EventEmitter {
     const xAxis = this.xAxis;
     const chunkSize = xAxis.length;
     const yAxes = lines.map( line => line.yAxis );
-    const sumTree = Array( xAxis.length );
+    const sumTree = [];
     let k = 0;
 
     for (let currentN = 0; currentN < maxN; ++currentN) {
       for (let columnIndex = 0; columnIndex < chunkSize; ++columnIndex) {
-        let sum = 0;
+        let columnSum = 0;
 
         if (currentN) {
-          for (let bit = 1, len = lines.length; bit <= len; ++bit) {
-            if (currentN & bit) {
-              sum += yAxes[ bit - 1 ][ columnIndex ];
+          for (let bit = 0; bit < yAxes.length; ++bit) {
+            if (currentN & ( 1 << bit )) {
+              columnSum += yAxes[ bit ][ columnIndex ];
             }
           }
         }
 
-        sumTree[ currentN * chunkSize + columnIndex ] = sum;
+        sumTree[ k++ ] = columnSum;
       }
     }
 
@@ -815,7 +815,14 @@ export class BaseChart extends EventEmitter {
       const [ minIndex, maxIndex ] = this._viewportRangeIndexes;
       localMaxY = arrayMax( this.stackedSumTree, chunkOffset + minIndex, chunkOffset + maxIndex );
 
-      console.log( localMaxY, this.computeSumTreeN() );
+      /*console.log(
+        'sum:', localMaxY, 'N:',
+        this.computeSumTreeN(),
+        'offset:',
+        chunkOffset,
+        'sub array:',
+        this.stackedSumTree.slice( chunkOffset + minIndex, chunkOffset + maxIndex )
+      );*/
     } else {
       this.eachSeries(line => {
         if (!line.isVisible) {

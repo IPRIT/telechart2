@@ -57,7 +57,8 @@ export class BarSeries extends Series {
 
     context.fillStyle = this.color;
 
-    setAA( context, false );
+    // setAA( context, false );
+    const dpr = this.chart.telechart.canvasDpr;
 
     for (let i = startIndex, inputIndex = 0; i <= endIndex; i += step, ++inputIndex) {
       // set if undefined
@@ -67,10 +68,10 @@ export class BarSeries extends Series {
       const barHeightY = this.yAxis[ i ] * barScale;
       input[ inputIndex ] += barHeightY;
 
-      const x = ( this.xAxis[ i ] - barHalfWidthX ) / viewportPixelX - dxOffset - .5;
-      const y = dyOffset - ( startY + barHeightY ) / viewportPixelY - .5;
-      const width = barWidthX / viewportPixelX + .5;
-      const height = Math.max( 1, barHeightY / viewportPixelY + .5 );
+      let x = ( this.xAxis[ i ] - barHalfWidthX ) / viewportPixelX - dxOffset - 1;
+      let y = dyOffset - ( startY + barHeightY ) / viewportPixelY - 1;
+      let width = barWidthX / viewportPixelX + 1;
+      let height = barHeightY / viewportPixelY + 1;
 
       context.fillRect( x, y, width, height );
     }
