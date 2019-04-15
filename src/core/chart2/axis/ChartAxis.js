@@ -1,13 +1,6 @@
 import { EventEmitter } from '../../misc/EventEmitter';
-import {
-  animationTimeout,
-  arrayDiff,
-  clampNumber,
-  cssText,
-  setAttributeNS,
-  setAttributesNS
-} from '../../../utils';
 import { Tween, TweenEvents } from '../../animation/Tween';
+import { arrayDiff } from '../../../utils';
 
 export const AxisElementState = {
   pending: 1,

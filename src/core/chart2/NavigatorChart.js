@@ -2,13 +2,12 @@ import { BaseChart } from './BaseChart';
 import { ChartTypes } from './ChartTypes';
 import { NavigatorChartEvents } from './events/NavigatorChartEvents';
 import { Tween, TweenEvents } from '../animation/Tween';
+import { TelechartWorkerEvents } from '../worker/worker-events';
 
 import {
-  animationTimeout,
   ChartVariables,
   clampNumber, drawRoundedRect
 } from '../../utils';
-import { TelechartWorkerEvents } from '../worker/worker-events';
 
 export class NavigatorChart extends BaseChart {
 

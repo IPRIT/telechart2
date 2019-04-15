@@ -72,57 +72,6 @@ export function getElementOffset (element) {
 }
 
 /**
- * @param {Element} targetElement
- * @param {Element} relativeElement
- * @return {{ top: number, left: number }}
- */
-export function getElementRelativeOffset (targetElement, relativeElement) {
-  const targetOffset = getElementOffset(targetElement);
-  const relativeOffset = getElementOffset(relativeElement);
-
-  return {
-    top: targetOffset.top - relativeOffset.top + relativeElement.scrollTop,
-    left: targetOffset.left - relativeOffset.left + relativeElement.scrollLeft
-  };
-}
-
-/**
- * @returns {number}
- */
-export function getDocumentHeight () {
-  return Math.max(
-    document.body.scrollHeight,
-    document.documentElement.scrollHeight,
-    document.body.offsetHeight,
-    document.documentElement.offsetHeight,
-    document.body.clientHeight,
-    document.documentElement.clientHeight
-  );
-}
-
-/**
- * @return {number}
- */
-export function getDocumentScrollTop () {
-  const supportPageOffset = window.pageXOffset !== undefined;
-  const isCSS1Compat = ((document.compatMode || "") === "CSS1Compat");
-
-  return supportPageOffset
-    ? window.pageYOffset
-    : isCSS1Compat
-      ? document.documentElement.scrollTop
-      : document.body.scrollTop;
-}
-
-/**
- * @returns {number}
- */
-export function getWindowHeight () {
-  return window.innerHeight ||
-    (document.documentElement || document.body).clientHeight;
-}
-
-/**
  * @param {Element} element
  * @returns {number}
  */
@@ -136,30 +85,6 @@ export function getElementHeight (element) {
  */
 export function getElementWidth (element) {
   return element.innerWidth || element.clientWidth;
-}
-
-/**
- * @param {Element} element
- * @returns {number}
- */
-export function getElementScrollHeight (element) {
-  return Math.max(
-    element.scrollHeight,
-    element.offsetHeight,
-    element.clientHeight
-  );
-}
-
-/**
- * @param {Element} element
- * @returns {number}
- */
-export function getElementScrollWidth (element) {
-  return Math.max(
-    element.scrollWidth,
-    element.offsetWidth,
-    element.clientWidth
-  );
 }
 
 const camelCaseAttrWhiteList = [
@@ -209,15 +134,6 @@ export function setAttributeNS (element, attr, value, ns) {
   // prevent from babel optimisation
   ns = ns || null;
   element.setAttributeNS( ns, attr, value );
-}
-
-/**
- * @param element
- */
-export function removeElement (element) {
-  if (element && element.parentNode) {
-    element.parentNode.removeChild( element );
-  }
 }
 
 /**

@@ -109,37 +109,6 @@ export function arrayMinMax (array, startIndex = 0, endIndex = array.length - 1)
 }
 
 /**
- * @param {Array<number>} array
- * @return {number}
- */
-export function arraySum (array) {
-  let length = array.length;
-  let sum = 0;
-
-  while (length--) {
-    sum += array[ length ];
-  }
-
-  return sum;
-}
-
-/**
- * @param {Array<number>} array
- * @return {number}
- */
-export function arrayAvg (array) {
-  let length = array.length;
-  let result = arraySum( array );
-
-  // prevent from dividing by zero
-  if (length) {
-    result = result / length;
-  }
-
-  return result;
-}
-
-/**
  * Finds boundary indexes in an array of numbers
  *
  * @param {Array<number>} array
@@ -169,43 +138,6 @@ export function binarySearchIndexes (array, value, order = 1) {
   if (array[ right ] === value) {
     left = right;
   } else if (array[ left ] === value) {
-    right = left;
-  }
-
-  return [ left, right ];
-}
-
-/**
- * Finds boundary indexes in an array of objects
- *
- * @param {Array<Object>} array
- * @param {number} value
- * @param {string} key
- * @param {number} order
- * @return {[number, number]} Indexes
- * @private
- */
-export function binarySearchObjectIndexes (array, value, key, order = 1) {
-  let [ left, right ] = [ 0, array.length - 1 ];
-
-  if (!array.length || order * value < order * array[ left ][ key ]) {
-    return [ -1, 0 ];
-  } else if (order * value > order * array[ right ][ key ]) {
-    return [ right, right + 1 ];
-  }
-
-  while (right - left > 1) {
-    let mid = left + (( right - left ) >> 1);
-    if (order * value <= order * array[ mid ][ key ]) {
-      right = mid;
-    } else {
-      left = mid;
-    }
-  }
-
-  if (array[ right ][ key ] === value) {
-    left = right;
-  } else if (array[ left ][ key ] === value) {
     right = left;
   }
 

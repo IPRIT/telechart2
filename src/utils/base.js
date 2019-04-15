@@ -7,15 +7,6 @@ export function objectEachKey (object, fn = () => {}) {
 }
 
 /**
- * @param {*} object
- * @param {Function} fn
- * @return {*[]}
- */
-export function objectMapKey (object, fn = () => {}) {
-  return Object.keys( object ).map( fn );
-}
-
-/**
  * @param {number} value
  * @param {number} min
  * @param {number} max
@@ -47,14 +38,6 @@ export function ensureNumber (value) {
     return 0;
   }
   return value;
-}
-
-/**
- * @param {*} value
- * @returns {boolean}
- */
-export function isObject (value) {
-  return typeof value === 'object' && value !== null;
 }
 
 /**

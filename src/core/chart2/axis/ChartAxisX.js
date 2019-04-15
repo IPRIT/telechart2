@@ -1,5 +1,5 @@
 import { AxisElementState, ChartAxis } from './ChartAxis';
-import { clampNumber, setAttributeNS, zeroFill } from '../../../utils';
+import { zeroFill } from '../../../utils';
 
 let AUTOINCREMENT_ID = 1;
 

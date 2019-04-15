@@ -1,19 +1,11 @@
-import { Clock } from './core/misc/Clock';
-import { ChartThemes, Colors } from './utils/themes';
-import { Chart } from './core/chart2/Chart';
 import { EventEmitter } from './core/misc/EventEmitter';
+import { Clock } from './core/misc/Clock';
+import { Chart } from './core/chart2/Chart';
 import { NavigatorChart } from './core/chart2/NavigatorChart';
 import { ChartEvents } from './core/chart2/events/ChartEvents';
+import { ChartThemes, Colors } from './utils/themes';
 import { NavigatorChartEvents } from './core/chart2/events/NavigatorChartEvents';
 import { TelechartWorkerEvents } from './core/worker/worker-events';
-// import { Chart } from './core/chart/Chart';
-// import { NavigatorChart } from './core/chart/NavigatorChart';
-// import { LabelButtons } from './core/chart/LabelButtons';
-
-/*import { ChartEvents } from './core/chart/events/ChartEvents';
-import { NavigatorChartEvents } from './core/chart/events/NavigatorChartEvents';*/
-
-// import { ChartThemes } from "./utils";
 
 let TELECHART_ID = 1;
 
@@ -106,11 +98,6 @@ export class Telechart2 extends EventEmitter {
    * @private
    */
   _clock = null;
-
-  /**
-   * @type {number}
-   */
-  devicePixelRatio = 1;
 
   /**
    * @type {{top: number, left: number}}
