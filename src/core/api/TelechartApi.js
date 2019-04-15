@@ -309,7 +309,9 @@ export class TelechartApi extends EventEmitter {
     this._attachMainListeners();
     this._attachNavigatorListeners();
 
-    if (this._resizeListener) {
+    if (this._onResize) {
+      this._onResize();
+
       window.addEventListener('load', _ => {
         this._onResize();
 

@@ -721,8 +721,7 @@ export class BaseChart extends EventEmitter {
 
     this.eachSeries(line => {
       // update local extremes only if indexes range changed
-      // todo: remove update for percentage
-      if (updateExtremes && !this.isStacked || this.isPercentage) {
+      if (updateExtremes && !this.isStacked) {
         // update minY and maxY local values for each line
         line.updateLocalExtremes();
       }
@@ -876,7 +875,7 @@ export class BaseChart extends EventEmitter {
       const [ minIndex, maxIndex ] = this._viewportRangeIndexes;
       localMaxY = arrayMax( this.stackedSumTree, chunkOffset + minIndex, chunkOffset + maxIndex );
     } else if (isPercentage) {
-      localMaxY = 110;
+      localMaxY = 105;
     } else {
       this.eachSeries(line => {
         if (!line.isVisible) {

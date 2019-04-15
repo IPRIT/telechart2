@@ -28,18 +28,19 @@ export class PercentageAreaSeries extends Series {
    * @private
    */
   drawAreasToContext (context, interval, step = 1, input = [], settings = {}) {
+    const chartOffsetTop = this.chart.seriesOffsetTop + ( this.chart.isMainChart ? 14 : 0 );
+    const chartHeight = this.chart.chartHeight - ( this.chart.isMainChart ? 14 : 0 );
+
     const {
       viewportRange = this.chart.viewportRange,
       viewportPixelX = this.chart.viewportPixelX,
-      viewportPixelY = 100 / this.chart.chartHeight,
+      viewportPixelY = 100 / chartHeight,
       currentLocalMinY = 0
     } = settings || {};
 
     const [ startIndex, endIndex ] = interval;
     const [ minViewportX ] = viewportRange;
 
-    const chartHeight = this.chart.chartHeight;
-    const chartOffsetTop = this.chart.seriesOffsetTop;
     const chartBottomLineY = chartOffsetTop + chartHeight;
 
     const dxOffset = minViewportX / viewportPixelX;
@@ -80,8 +81,8 @@ export class PercentageAreaSeries extends Series {
       }
 
       if (i === endIndex) {
-        context.lineTo( x, this.chart.seriesOffsetTop );
-        context.lineTo( this.xAxis[ startIndex ] / viewportPixelX - dxOffset, this.chart.seriesOffsetTop );
+        context.lineTo( x, chartOffsetTop );
+        context.lineTo( this.xAxis[ startIndex ] / viewportPixelX - dxOffset, chartOffsetTop );
       }
     }
 

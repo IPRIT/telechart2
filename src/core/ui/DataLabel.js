@@ -445,7 +445,7 @@ export class DataLabel extends EventEmitter {
     const { left: cursorLeft } = this._getCursorOffset();
 
     const labelPadding = 8;
-    const cursorPadding = isTouchSupported ? 10 : -10;
+    const cursorPadding = isTouchSupported ? 10 : 0;
 
     const currentDirection = this.containerDirection;
     const isLeft = currentDirection === 'left';
@@ -455,7 +455,7 @@ export class DataLabel extends EventEmitter {
     let labelTranslateRight = cursorLeft + cursorPadding;
 
     let labelTranslateX = isLeft ? labelTranslateLeft : labelTranslateRight;
-    let labelTranslateY = 40;
+    let labelTranslateY = isTouchSupported ? 55 : 45;
 
     let allowedRight = false;
     let allowedLeft = false;

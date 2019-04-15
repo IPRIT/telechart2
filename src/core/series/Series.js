@@ -451,7 +451,7 @@ export class Series extends EventEmitter {
    */
   _createOpacityAnimation (opacity) {
     const duration = 300;
-    const timingFunction = this.chart.isPercentage ? 'easeInOutQuart' : 'easeInOutQuad';
+    const timingFunction = this.chart.isPercentage ? 'easeInOutCubic' : 'easeInOutQuad';
 
     this.opacityAnimation = new Tween(this, 'opacity', opacity, {
       duration,

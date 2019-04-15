@@ -196,9 +196,9 @@ export class Chart extends BaseChart {
     const lowerX = this.xAxis[ lowerIndex ];
     const upperX = this.xAxis[ upperIndex ];
 
-    let linearScale = 0;
+    let linearInterpolation = 0;
     if (upperX - lowerX > 0) {
-      linearScale = ( currentX - lowerX ) / ( upperX - lowerX );
+      linearInterpolation = ( currentX - lowerX ) / ( upperX - lowerX );
     }
 
     const canvasX = this.projectXToCanvas( currentX );
@@ -213,7 +213,7 @@ export class Chart extends BaseChart {
 
       const y0 = line.yAxis[ lowerIndex ];
       const y1 = line.yAxis[ upperIndex ];
-      const y = y0 + ( y1 - y0 ) * linearScale;
+      const y = y0 + ( y1 - y0 ) * linearInterpolation;
 
       let canvasY = 0;
 
@@ -323,6 +323,12 @@ export class Chart extends BaseChart {
     oldX = this.cursorAnimation && this.cursorAnimation.currentPosition || oldX;
 
     if (!this.cursorAnimation) {
+      const pointsNumber = this.viewportRangeIndexes[ 1 ] - this.viewportRangeIndexes[ 0 ];
+      if (pointsNumber > 60) {
+        // translate without animation
+        return ( this.axisCursorPositionX = newX );
+      }
+
       const viewportRange = this.viewportRange;
       const insideViewportRange = viewportRange[0] <= oldX && oldX <= viewportRange[1];
       if (this._firstCursorAnimation || !insideViewportRange) {
@@ -368,8 +374,8 @@ export class Chart extends BaseChart {
 
     const viewportDistance = this.viewportRange[ 1 ] - this.viewportRange[ 0 ];
 
-    const velocity = viewportDistance * .000001;
-    const acceleration = viewportDistance * .0000001;
+    const velocity = viewportDistance * 1e-6;
+    const acceleration = viewportDistance * 1e-7;
     const maxVelocity = 1e9;
 
     const animation = new TransitionPlayback(fromX, toX, {

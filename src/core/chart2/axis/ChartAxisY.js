@@ -103,7 +103,7 @@ export class ChartAxisY extends ChartAxis {
     const viewportMinY = chart.localMinY;
     const viewportMaxY = chart.localMaxY - (
       isPercentage
-        ? 10
+        ? 5
         : (this.chart.seriesOffsetTop + this.fontSize) * viewportPixelY
     );
     const distance = viewportMaxY - viewportMinY;
