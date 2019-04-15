@@ -620,7 +620,7 @@ export class Chart extends BaseChart {
 
     if (!isInside && !immediate) {
       // create short delay for cursor & markers hiding
-      this._markerHideTimeout = setTimeout( change, 1500 );
+      this._markerHideTimeout = setTimeout( change, 2000 );
     } else {
       change();
     }
