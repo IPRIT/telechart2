@@ -75,9 +75,10 @@ export class ChartAxis extends EventEmitter {
     }
 
     if (this.updateAnimationsNeeded) {
-      this.updateAnimations();
+      this.updateAnimations( this.updateAnimationsWithoutAnimations );
 
       this.updateAnimationsNeeded = false;
+      this.updateAnimationsWithoutAnimations = false;
     }
   }
 
@@ -92,7 +93,8 @@ export class ChartAxis extends EventEmitter {
   redraw () {
   }
 
-  requestUpdateAnimations () {
+  requestUpdateAnimations (withoutAnimations = false) {
+    this.updateAnimationsWithoutAnimations = withoutAnimations;
     this.updateAnimationsNeeded = true;
   }
 
@@ -115,7 +117,7 @@ export class ChartAxis extends EventEmitter {
     this.hasActiveAnimations = hasAnimations;
   }
 
-  updateAnimations () {
+  updateAnimations (withoutAnimations = false) {
     const oldValues = this.axesValues;
 
     this.updateValues();
@@ -125,15 +127,16 @@ export class ChartAxis extends EventEmitter {
       return oldValues.indexOf( value ) === -1;
     });
 
-    this.createNewElements( valuesToCreate );
-    this.deleteOldElements( valuesToDelete );
+    this.createNewElements( valuesToCreate, withoutAnimations );
+    this.deleteOldElements( valuesToDelete, withoutAnimations );
   }
 
   /**
    * @param valuesToCreate
+   * @param withoutAnimations
    */
-  createNewElements (valuesToCreate) {
-    let elements = [];
+  createNewElements (valuesToCreate, withoutAnimations) {
+    let animateElements = [];
 
     for (let i = 0; i < valuesToCreate.length; ++i) {
       let element = this._getElementByValue( valuesToCreate[ i ] );
@@ -143,9 +146,11 @@ export class ChartAxis extends EventEmitter {
         continue;
       }
 
+      let created = false;
+
       if (!element) {
-        element = this.initializeWrapper( valuesToCreate[ i ] );
-        element.startOpacity = 0;
+        element = this.initializeWrapper( valuesToCreate[ i ], withoutAnimations );
+        created = true;
         this.elements.push( element );
       } else if (element.animation) {
         element.startOpacity = element.animationObject.opacity;
@@ -153,11 +158,14 @@ export class ChartAxis extends EventEmitter {
         element.startOpacity = 0;
       }
 
-      elements.push( element );
+      if (!created || created && !withoutAnimations) {
+        // not created or created with animation
+        animateElements.push( element );
+      }
     }
 
-    if (elements.length) {
-      const animation = this.createShowingAnimation( elements );
+    if (animateElements.length) {
+      const animation = this.createShowingAnimation( animateElements );
       this.animations.push( animation );
     }
   }
@@ -171,9 +179,10 @@ export class ChartAxis extends EventEmitter {
 
   /**
    * @param valuesToDelete
+   * @param withoutAnimations
    */
-  deleteOldElements (valuesToDelete) {
-    let elements = [];
+  deleteOldElements (valuesToDelete, withoutAnimations) {
+    let animateElements = [];
 
     for (let i = 0; i < valuesToDelete.length; ++i) {
       let element = this._getElementByValue( valuesToDelete[ i ] );
@@ -184,17 +193,22 @@ export class ChartAxis extends EventEmitter {
         continue;
       }
 
+      if (withoutAnimations) {
+        this.detachElement( element );
+        continue;
+      }
+
       if (element.animation) {
         element.startOpacity = element.animationObject.opacity;
       } else {
         element.startOpacity = 1;
       }
 
-      elements.push( element );
+      animateElements.push( element );
     }
 
-    if (elements.length) {
-      const animation = this.createHidingAnimation( elements );
+    if (animateElements.length) {
+      const animation = this.createHidingAnimation( animateElements );
 
       this.animations.push( animation );
     }

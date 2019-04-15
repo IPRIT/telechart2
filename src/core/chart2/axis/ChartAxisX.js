@@ -137,10 +137,10 @@ export class ChartAxisX extends ChartAxis {
 
   /**
    * @param value
-   * @param {boolean} initial
+   * @param withoutAnimations
    * @return {{animation: Tween, state: number, opacity: number, value: *}}
    */
-  initializeWrapper (value, initial = false) {
+  initializeWrapper (value, withoutAnimations = false) {
     let formattedValue = this._toDateString( value );
     const parts = formattedValue.split( ' ' );
     formattedValue = [ parts[0], parts[1] ].join( ' ' );
@@ -149,8 +149,8 @@ export class ChartAxisX extends ChartAxis {
       id: AUTOINCREMENT_ID++,
       value,
       formattedValue,
-      opacity: 0,
-      startOpacity: 0,
+      opacity: withoutAnimations ? 1 : 0,
+      startOpacity: withoutAnimations ? 1 : 0,
       animation: null,
       animationId: null,
       state: AxisElementState.showing

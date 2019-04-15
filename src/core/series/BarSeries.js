@@ -1,5 +1,6 @@
 import { Series } from './Series';
 import { SeriesTypes } from './SeriesTypes';
+import { setAA } from '../../utils';
 
 export class BarSeries extends Series {
 
@@ -9,42 +10,25 @@ export class BarSeries extends Series {
     this.setType( SeriesTypes.bar );
   }
 
-  draw (context) {
-    this.drawBars( context );
-  }
-
-  drawBars (context) {
-    if (!this.opacity) {
-      return;
-    }
-
-    const interval = this.chart._viewportPointsIndexes;
-
-    if (!interval.length
-      || interval[ 1 ] - interval[ 0 ] <= 0) {
-      return;
-    }
-
-    this.drawBarsByInterval( context, interval, this.chart.viewportPointsStep );
-  }
-
   /**
    * @param {CanvasRenderingContext2D} context
    * @param {Array<number>} interval
    * @param {number} step
+   * @param input
    */
-  drawBarsByInterval (context, interval, step = 1) {
-    // console.log( 'drawing bars' );
+  drawByInterval (context, interval, step = 1, input) {
+    return this.drawBarsToContext( context, interval, step, input );
   }
 
   /**
    * @param context
    * @param interval
    * @param step
+   * @param input
    * @param settings
    * @private
    */
-  drawBarsToContext (context, interval, step = 1, settings = {}) {
+  drawBarsToContext (context, interval, step = 1, input = [], settings = {}) {
     const {
       viewportRange = this.chart.viewportRange,
       viewportPixelX = this.chart.viewportPixelX,
@@ -60,12 +44,39 @@ export class BarSeries extends Series {
     const chartBottomLineY = chartOffsetTop + chartHeight;
 
     const dxOffset = minViewportX / viewportPixelX;
-    const dyOffset = currentLocalMinY / viewportPixelY;
+    const dyOffset = currentLocalMinY / viewportPixelY + chartBottomLineY;
 
-    const x = this.xAxis[ startIndex ] / viewportPixelX - dxOffset;
-    const y = chartBottomLineY - ( this.yAxis[ startIndex ] / viewportPixelY - dyOffset );
+    const barScale = this.opacity;
+    let barWidthX = this.xAxis[ startIndex + step ] - this.xAxis[ startIndex ];
 
-    for (let i = startIndex + 1; i <= endIndex; i += step) {
+    if (!barWidthX) {
+      barWidthX = this.xAxis[ startIndex ] - this.xAxis[ startIndex - step ];
     }
+
+    const barHalfWidthX = barWidthX * .5;
+
+    context.fillStyle = this.color;
+
+    setAA( context, false );
+
+    for (let i = startIndex, inputIndex = 0; i <= endIndex; i += step, ++inputIndex) {
+      // set if undefined
+      input[ inputIndex ] = input[ inputIndex ] || 0;
+
+      const startY = input[ inputIndex ];
+      const barHeightY = this.yAxis[ i ] * barScale;
+      input[ inputIndex ] += barHeightY;
+
+      const x = ( this.xAxis[ i ] - barHalfWidthX ) / viewportPixelX - dxOffset - .5;
+      const y = dyOffset - ( startY + barHeightY ) / viewportPixelY - .5;
+      const width = barWidthX / viewportPixelX + .5;
+      const height = Math.max( 1, barHeightY / viewportPixelY + .5 );
+
+      context.fillRect( x, y, width, height );
+    }
+
+    context.fill();
+
+    return input;
   }
 }

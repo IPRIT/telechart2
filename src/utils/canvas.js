@@ -30,3 +30,11 @@ export function drawRoundedRect (context, x, y, width, height, options = {}) {
 
   context.closePath();
 }
+
+export function setAA (context, value){
+  context['imageSmoothingEnabled'] = value;       /* standard */
+  context['mozImageSmoothingEnabled'] = value;    /* Firefox */
+  context['oImageSmoothingEnabled'] = value;      /* Opera */
+  context['webkitImageSmoothingEnabled'] = value; /* Safari */
+  context['msImageSmoothingEnabled'] = value;     /* IE */
+}

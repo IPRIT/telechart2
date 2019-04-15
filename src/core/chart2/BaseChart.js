@@ -9,6 +9,7 @@ import { ChartAxisY2 } from './axis/ChartAxisY2';
 import { ChartAxisX } from './axis/ChartAxisX';
 
 import {
+  arrayMax,
   arraysEqual,
   binarySearchIndexes, ChartVariables,
   clampNumber,
@@ -293,6 +294,11 @@ export class BaseChart extends EventEmitter {
 
   initialize () {
     this.createSeries();
+
+    if (this.isMainChart && this.isStacked) {
+      this.initializeStackedSumTree();
+    }
+
     this.addEvents();
 
     this.setInitialRange();
@@ -301,10 +307,6 @@ export class BaseChart extends EventEmitter {
     if (this.isMainChart) {
       this.initializeAxisY();
       this.initializeAxisX();
-    }
-
-    if (this.isMainChart && this.isStacked) {
-      this.initializeStackedSumTree();
     }
   }
 
@@ -529,22 +531,22 @@ export class BaseChart extends EventEmitter {
     const xAxis = this.xAxis;
     const chunkSize = xAxis.length;
     const yAxes = lines.map( line => line.yAxis );
-    const sumTree = [];
+    const sumTree = Array( xAxis.length );
     let k = 0;
 
     for (let currentN = 0; currentN < maxN; ++currentN) {
       for (let columnIndex = 0; columnIndex < chunkSize; ++columnIndex) {
         let sum = 0;
 
-        for (let bit = 1, len = lines.length; bit <= len; ++bit) {
-          if (( currentN & bit ) === 0) {
-            continue;
+        if (currentN) {
+          for (let bit = 1, len = lines.length; bit <= len; ++bit) {
+            if (currentN & bit) {
+              sum += yAxes[ bit - 1 ][ columnIndex ];
+            }
           }
-
-          sum += yAxes[ bit - 1 ][ columnIndex ];
         }
 
-        sumTree[ k++ ] = sum;
+        sumTree[ currentN * chunkSize + columnIndex ] = sum;
       }
     }
 
@@ -631,8 +633,13 @@ export class BaseChart extends EventEmitter {
    * @param {boolean} preservePadding
    */
   setViewportRange (minX = -Infinity, maxX = Infinity, { skipExtremes = false, preservePadding = false } = {}) {
+    const oldDistance = this._viewportDistance;
+
     // recompute X boundaries
     this._setViewportRange( minX, maxX, preservePadding );
+
+    // detect if viewport distance is changed
+    const distanceChanged = Math.abs( oldDistance - this._viewportDistance ) > 1e-2;
 
     // remember last indexes
     const oldRangeIndexes = this._viewportRangeIndexes;
@@ -649,10 +656,6 @@ export class BaseChart extends EventEmitter {
         this._viewportPointsGroupingNeeded = true;
       }
 
-      if (this.xAxisView) {
-        this.xAxisView.requestUpdateAnimations();
-      }
-
       localExtremesUpdateRequested = true;
     }
 
@@ -660,7 +663,8 @@ export class BaseChart extends EventEmitter {
 
     this.eachSeries(line => {
       // update local extremes only if indexes range changed
-      if (updateExtremes) {
+      // todo: remove update for percentage
+      if (updateExtremes && !this.isStacked || this.isPercentage) {
         // update minY and maxY local values for each line
         line.updateLocalExtremes();
       }
@@ -672,14 +676,18 @@ export class BaseChart extends EventEmitter {
     if (updateExtremes) {
       // update local extremes on chart level
       this.updateLocalExtremes();
-      this.updateLocalExtremes2();
+
+      if (this.isYScaled) {
+        this.updateLocalExtremes2();
+      }
     }
 
     // recompute pixel values
     this.updateViewportPixel();
 
     if (this.xAxisView) {
-      this.xAxisView.requestUpdateAnimations();
+      // update x axis animations only if distance has changed
+      this.xAxisView.requestUpdateAnimations( !distanceChanged );
       this.xAxisView.requestRedraw();
     }
 
@@ -782,6 +790,8 @@ export class BaseChart extends EventEmitter {
   updateLocalExtremes () {
     const isLineChart = this.isLineChart;
     const isYScaled = this.isYScaled;
+    const isStacked = this.isStacked;
+    const isPercentage = this.isPercentage;
 
     let localMinY = isLineChart ? Infinity : 0;
     let localMaxY = 0;
@@ -799,6 +809,13 @@ export class BaseChart extends EventEmitter {
       if (localMaxY < line.localMaxY) {
         localMaxY = line.localMaxY;
       }
+    } else if (isStacked && !isPercentage) {
+      const chunkOffset = this.computeSumTreeChunkOffset();
+
+      const [ minIndex, maxIndex ] = this._viewportRangeIndexes;
+      localMaxY = arrayMax( this.stackedSumTree, chunkOffset + minIndex, chunkOffset + maxIndex );
+
+      console.log( localMaxY, this.computeSumTreeN() );
     } else {
       this.eachSeries(line => {
         if (!line.isVisible) {
@@ -1161,6 +1178,26 @@ export class BaseChart extends EventEmitter {
     const chartLeft = pageX - left;
 
     return this.viewportRange[ 0 ] + chartLeft * this.viewportPixelX;
+  }
+
+  /**
+   * @return {number}
+   */
+  computeSumTreeN () {
+    let bits = 0;
+    for (let i = 0; i < this.series.length; ++i) {
+      if (this.series[i].isVisible) {
+        bits |= 1 << i;
+      }
+    }
+    return bits;
+  }
+
+  /**
+   * @return {number}
+   */
+  computeSumTreeChunkOffset () {
+    return this.xAxis.length * this.computeSumTreeN();
   }
 
   /**

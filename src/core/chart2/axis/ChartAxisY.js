@@ -122,15 +122,16 @@ export class ChartAxisY extends ChartAxis {
 
   /**
    * @param value
+   * @param withoutAnimations
    * @return {{animation: Tween, state: number, opacity: number, value: *}}
    */
-  initializeWrapper (value) {
+  initializeWrapper (value, withoutAnimations = false) {
     return {
       id: AUTOINCREMENT_ID++,
       value, //: this.roundValue( value ),
       formattedValue: this.formatNumber( value ),
-      opacity: 0,
-      startOpacity: 0,
+      opacity: withoutAnimations ? 1 : 0,
+      startOpacity: withoutAnimations ? 1 : 0,
       animation: null,
       animationId: null,
       state: AxisElementState.showing

@@ -180,35 +180,32 @@ export class Series extends EventEmitter {
     }
   }
 
-  render (context = this.chart.telechart.mainContext) {
-    this.draw( context );
-  }
-
-  draw (context) {
-    this.drawPath( context );
-  }
-
-  drawPath (context) {
+  render (context = this.chart.telechart.mainContext, input) {
     if (!this.opacity) {
-      return;
+      return input;
     }
 
     const interval = this.chart._viewportPointsIndexes;
 
     if (!interval.length
       || interval[ 1 ] - interval[ 0 ] <= 0) {
-      return;
+      return input;
     }
 
-    this.drawPathByInterval( context, interval, this.chart.viewportPointsStep );
+    if (!input || input.length === 0) {
+      input = []
+    }
+
+    return this.drawByInterval( context, interval, this.chart.viewportPointsStep, input );
   }
 
   /**
    * @param {CanvasRenderingContext2D} context
    * @param {Array<number>} interval
    * @param {number} step
+   * @param input
    */
-  drawPathByInterval (context, interval, step = 1) {
+  drawByInterval (context, interval, step = 1, input) {
     context.globalAlpha = this.opacity;
     context.strokeStyle = this._color;
     context.lineWidth = this.strokeWidth;

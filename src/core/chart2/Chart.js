@@ -95,15 +95,19 @@ export class Chart extends BaseChart {
     const context = this.telechart.mainContext;
     context.clearRect( 0, 0, this.chartWidth, ChartVariables.mainMaxHeight );
 
+    let lastOutput = [];
     for (let i = 0, len = this.series.length; i < len; ++i) {
-      this.series[ i ].render( context );
+      lastOutput = this.series[ i ].render( context, lastOutput );
     }
   }
 
   redrawUIOverlay () {
     if (this.redrawCursorRequested || this.telechart.forceRedraw) {
       this.redrawCursor();
-      this.redrawMarkers();
+
+      if (this.isLineChart) {
+        this.redrawMarkers();
+      }
 
       this.redrawCursorRequested = false;
     }

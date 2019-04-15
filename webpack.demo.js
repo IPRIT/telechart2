@@ -22,6 +22,9 @@ module.exports = {
   node: {
     fs: 'empty'
   },
+  optimization: {
+    // minimize: true
+  },
   module: {
     rules: [
       {
@@ -41,9 +44,9 @@ module.exports = {
         test: /\.worker\.js$/,
         loader: 'worker-loader',
         options: {
-          inline: true,
+          inline: false,
           fallback: true,
-          name: 'telechart2.[hash].js'
+          name: 'worker.[hash].js'
         }
       },
       {

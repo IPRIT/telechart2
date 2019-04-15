@@ -111,6 +111,11 @@ export class NavigatorChart extends BaseChart {
   update (deltaTime) {
     super.update( deltaTime );
 
+    /*if (this._navigatorRangeFromEventUpdated) {
+      this.setNavigationRange( ...this._navigatorRangeFromEvent );
+      this._navigatorRangeFromEventUpdated = false;
+    }*/
+
     const hasRangeAnimation = this._navigatorRangeAnimation && this._navigatorRangeAnimation.isRunning;
     if (hasRangeAnimation) {
       this._navigatorRangeAnimation.update( deltaTime );
@@ -140,12 +145,9 @@ export class NavigatorChart extends BaseChart {
     const context = this.telechart.navigationSeriesContext;
     context.clearRect( 0, 0, this.chartWidth, this.chartHeight );
 
-    context.lineWidth = 1;
-    context.lineJoin = 'bevel';
-    context.lineCap = 'butt';
-
+    let lastOutput = [];
     for (let i = 0, len = this.series.length; i < len; ++i) {
-      this.series[ i ].render( context );
+      lastOutput = this.series[ i ].render( context, lastOutput );
     }
   }
 
@@ -346,6 +348,13 @@ export class NavigatorChart extends BaseChart {
     this._navigatorRangeAnimation.start();
 
     this.emit( NavigatorChartEvents.ANIMATE_RANGE, [ newMin, newMax ] );
+  }
+
+  setNavigationRangeFromEvent (min, max) {
+    /*this._navigatorRangeFromEvent = [ min, max ];
+    this._navigatorRangeFromEventUpdated = true;*/
+
+    this.setNavigationRange( min, max );
   }
 
   /**
@@ -553,7 +562,7 @@ export class NavigatorChart extends BaseChart {
       true
     );
 
-    this.setNavigationRange( min, max );
+    this.setNavigationRangeFromEvent( min, max );
   }
 
   /**
@@ -596,7 +605,7 @@ export class NavigatorChart extends BaseChart {
       true
     );
 
-    this.setNavigationRange( min, max );
+    this.setNavigationRangeFromEvent( min, max );
   }
 
   /**
@@ -646,7 +655,7 @@ export class NavigatorChart extends BaseChart {
       this._sliderControllerStartPosition[ 0 ] = min;
     }
 
-    this.setNavigationRange( min, max );
+    this.setNavigationRangeFromEvent( min, max );
   }
 
   /**
@@ -698,7 +707,7 @@ export class NavigatorChart extends BaseChart {
       this._sliderControllerStartPosition[ 0 ] = min;
     }
 
-    this.setNavigationRange( min, max );
+    this.setNavigationRangeFromEvent( min, max );
   }
 
   /**
