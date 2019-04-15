@@ -150,7 +150,13 @@ export class TelechartApi extends EventEmitter {
       const navigationSeriesOffscreen = navigationSeriesCanvas.transferControlToOffscreen();
       const navigationUIOffscreen = navigationUICanvas.transferControlToOffscreen();
 
-      const worker = this.worker = new TelechartWorker();
+      let worker = null;
+      try {
+        worker = this.worker = new TelechartWorker();
+      } catch (e) {
+        alert( 'WebWorker does not work if you open index.html from a folder (because of CORS). OffscreenCanvas will be turned off.' );
+        return ( location.href = '?oc=false' );
+      }
 
       this._createLabelButtons();
 
