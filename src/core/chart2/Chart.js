@@ -119,9 +119,18 @@ export class Chart extends BaseChart {
 
   redrawCursor () {
     const context = this.telechart.uiContext;
-    const colors = this.telechart.themeColors;
 
     context.clearRect( 0, 0, this.chartWidth, ChartVariables.mainMaxHeight );
+
+    if (this.isBarChart) {
+      this.drawCursorBar( context );
+    } else {
+      this.drawCursorLine( context );
+    }
+  }
+
+  drawCursorLine (context) {
+    const colors = this.telechart.themeColors;
 
     const cursorColor = colors.axisColor;
     const cursorColorAlpha = colors.axisColorAlpha;
@@ -138,6 +147,32 @@ export class Chart extends BaseChart {
     context.moveTo( x, y1 );
     context.lineTo( x, y2 );
     context.stroke();
+  }
+
+  drawCursorBar (context) {
+    const colors = this.telechart.themeColors;
+
+    const maskColor = colors.maskColor;
+    const maskColorAlpha = colors.maskColorAlpha;
+
+    context.globalAlpha = maskColorAlpha * this.cursorOpacity;
+    context.fillStyle = maskColor;
+    context.lineWidth = 1;
+
+    const barWidthX = ( this.xAxis[ this.viewportPointsStep ] - this.xAxis[ 0 ] ) / this.viewportPixelX;
+    const barHalfWidthX = barWidthX * .5;
+
+    const x = this.projectXToCanvas( this.axisCursorPositionX );
+    const x1 = -1;
+    const x2 = x - barHalfWidthX + .3;
+    const x3 = x + barHalfWidthX - .3;
+    const x4 = this.chartWidth + 1;
+
+    const y1 = this.seriesOffsetTop - 1;
+    const y2 = this.seriesOffsetTop + this.chartHeight + 1;
+
+    context.fillRect( x1, y1, x2 - x1, y2 - y1 );
+    context.fillRect( x3, y1, x4 - x3, y2 - y1 );
   }
 
   redrawMarkers () {

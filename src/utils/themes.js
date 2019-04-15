@@ -42,7 +42,11 @@ export const Colors = {
     barAxisTextColorX: '#252529',
     barAxisTextColorAlphaX: .5,
     barAxisTextColorY: '#252529',
-    barAxisTextColorAlphaY: .5
+    barAxisTextColorAlphaY: .5,
+
+    // cursor mask
+    maskColor: '#FFFFFF',
+    maskColorAlpha: .5
   },
   dark: {
     color: '#242F3E',
@@ -62,5 +66,9 @@ export const Colors = {
     barAxisTextColorAlphaX: .6,
     barAxisTextColorY: '#ECF2F8',
     barAxisTextColorAlphaY: .5,
+
+    // cursor mask
+    maskColor: '#242F3E',
+    maskColorAlpha: .5
   }
 };

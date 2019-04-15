@@ -57,9 +57,6 @@ export class BarSeries extends Series {
 
     context.fillStyle = this.color;
 
-    // setAA( context, false );
-    const dpr = this.chart.telechart.canvasDpr;
-
     for (let i = startIndex, inputIndex = 0; i <= endIndex; i += step, ++inputIndex) {
       // set if undefined
       input[ inputIndex ] = input[ inputIndex ] || 0;
