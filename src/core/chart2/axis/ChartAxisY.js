@@ -142,6 +142,18 @@ export class ChartAxisY extends ChartAxis {
     super.updateValues();
   }
 
+  get textColor () {
+    return this.chart.isBarChart
+      ? this.chart.telechart.themeColors.barAxisTextColorY
+      : this.chart.telechart.themeColors.axisTextColor;
+  }
+
+  get textColorAlpha () {
+    return this.chart.isBarChart
+      ? this.chart.telechart.themeColors.barAxisTextColorAlphaY
+      : this.chart.telechart.themeColors.axisTextColorAlpha;
+  }
+
   get textColorLeft () {
     const yScaled = this.chart.isYScaled;
 

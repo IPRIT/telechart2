@@ -264,6 +264,11 @@ export class BaseChart extends EventEmitter {
   /**
    * @type {boolean}
    */
+  isBarChart = false;
+
+  /**
+   * @type {boolean}
+   */
   isYScaled = false;
 
   /**
@@ -507,6 +512,7 @@ export class BaseChart extends EventEmitter {
 
       if (type === 'bar') {
         this.isLineChart = false;
+        this.isBarChart = true;
       }
 
       // prepare series settings

@@ -171,6 +171,19 @@ export class ChartAxisX extends ChartAxis {
     this.axesValues = dates;
   }
 
+
+  get textColor () {
+    return this.chart.isBarChart
+      ? this.chart.telechart.themeColors.barAxisTextColorX
+      : this.chart.telechart.themeColors.axisTextColor;
+  }
+
+  get textColorAlpha () {
+    return this.chart.isBarChart
+      ? this.chart.telechart.themeColors.barAxisTextColorAlphaX
+      : this.chart.telechart.themeColors.axisTextColorAlpha;
+  }
+
   /**
    * @param value
    * @return {number}

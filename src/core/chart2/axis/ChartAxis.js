@@ -369,14 +369,6 @@ export class ChartAxis extends EventEmitter {
     }
   }
 
-  get textColor () {
-    return this.chart.telechart.themeColors.axisTextColor;
-  }
-
-  get textColorAlpha () {
-    return this.chart.telechart.themeColors.axisTextColorAlpha;
-  }
-
   /**
    * @param value
    * @return {{animation: Tween, state: number, value: *, opacity: number}}

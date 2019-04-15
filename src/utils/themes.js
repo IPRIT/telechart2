@@ -36,7 +36,13 @@ export const Colors = {
     axisTextColor: '#8E8E93',
     axisTextColorAlpha: 1,
     axisColor: '#182D3B',
-    axisColorAlpha: .1
+    axisColorAlpha: .1,
+
+    // axis for bars
+    barAxisTextColorX: '#252529',
+    barAxisTextColorAlphaX: .5,
+    barAxisTextColorY: '#252529',
+    barAxisTextColorAlphaY: .5
   },
   dark: {
     color: '#242F3E',
@@ -49,6 +55,12 @@ export const Colors = {
     axisTextColor: '#A3B1C2',
     axisTextColorAlpha: .6,
     axisColor: '#FFFFFF',
-    axisColorAlpha: .1
+    axisColorAlpha: .1,
+
+    // axis for bars
+    barAxisTextColorX: '#A3B1C2',
+    barAxisTextColorAlphaX: .6,
+    barAxisTextColorY: '#ECF2F8',
+    barAxisTextColorAlphaY: .5,
   }
 };

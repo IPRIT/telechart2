@@ -68,8 +68,8 @@ export class BarSeries extends Series {
       const barHeightY = this.yAxis[ i ] * barScale;
       input[ inputIndex ] += barHeightY;
 
-      let x = ( this.xAxis[ i ] - barHalfWidthX ) / viewportPixelX - dxOffset - 1;
-      let y = dyOffset - ( startY + barHeightY ) / viewportPixelY - 1;
+      let x = ( this.xAxis[ i ] - barHalfWidthX ) / viewportPixelX - dxOffset - .5;
+      let y = dyOffset - ( startY + barHeightY ) / viewportPixelY - .5;
       let width = barWidthX / viewportPixelX + 1;
       let height = barHeightY / viewportPixelY + 1;
 
