@@ -59,22 +59,22 @@ module.exports = {
             // translates CSS into CommonJS
             loader: 'css-loader',
             options: {
-              sourceMap: true
+              sourceMap: false
             }
           },
           {
             // Runs compiled CSS through postcss for vendor prefixing
             loader: 'postcss-loader',
             options: {
-              sourceMap: true
+              sourceMap: false
             }
           },
           {
             loader: 'sass-loader',
             options: {
               outputStyle: 'expanded',
-              sourceMap: true,
-              sourceMapContents: true
+              sourceMap: false,
+              sourceMapContents: false
             }
           }
         ]
@@ -128,9 +128,9 @@ module.exports = {
     new OptimizeCssAssetsPlugin({
       cssProcessor: require('cssnano'),
       cssProcessorOptions: {
-        map: {
+        /*map: {
           inline: false,
-        },
+        },*/
         discardComments: {
           removeAll: true
         }
