@@ -52,7 +52,7 @@ export const ChartVariables = {
 };
 
 export const DprSampling = {
-  main: 2,
+  main: 1.8,
   axis: 1.8,
   ui: 1.25,
   navSeries: 2.3,
