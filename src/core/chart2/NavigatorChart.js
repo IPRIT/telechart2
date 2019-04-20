@@ -110,11 +110,6 @@ export class NavigatorChart extends BaseChart {
   update (deltaTime) {
     super.update( deltaTime );
 
-    /*if (this._navigatorRangeFromEventUpdated) {
-      this.setNavigationRange( ...this._navigatorRangeFromEvent );
-      this._navigatorRangeFromEventUpdated = false;
-    }*/
-
     const hasRangeAnimation = this._navigatorRangeAnimation && this._navigatorRangeAnimation.isRunning;
     if (hasRangeAnimation) {
       this._navigatorRangeAnimation.update( deltaTime );
@@ -142,7 +137,7 @@ export class NavigatorChart extends BaseChart {
 
   redrawChart () {
     const context = this.telechart.navigationSeriesContext;
-    context.clearRect( 0, 0, this.chartWidth, this.chartHeight );
+    context.clearRect( 0, 0, this.telechart.canvasWidth, ChartVariables.navigationChartHeight );
 
     let lastOutput = [];
     for (let i = 0, len = this.series.length; i < len; ++i) {
@@ -296,7 +291,7 @@ export class NavigatorChart extends BaseChart {
   sendRangeToApi () {
     const range = this._navigatorRange;
     const [ f, s ] = this.telechart._chart._viewportPointsIndexes;
-    const rangeX = [ this.xAxis[ f ], this.xAxis[ s ] ];
+    const rangeX = [ Math.floor( this.xAxis[ f ] ), Math.floor( this.xAxis[ s ] ) ];
 
     if (this.telechart.isWorker) {
       this.telechart.global.postMessage({

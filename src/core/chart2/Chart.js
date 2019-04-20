@@ -93,7 +93,7 @@ export class Chart extends BaseChart {
 
   redrawChart () {
     const context = this.telechart.mainContext;
-    context.clearRect( 0, 0, this.chartWidth, ChartVariables.mainMaxHeight );
+    context.clearRect( 0, 0, this.telechart.canvasWidth, ChartVariables.mainMaxHeight );
 
     let lastOutput = [];
     for (let i = 0, len = this.series.length; i < len; ++i) {
@@ -114,19 +114,28 @@ export class Chart extends BaseChart {
   }
 
   requestRedrawCursor () {
+    this.cursorDrewBefore = true;
     this.redrawCursorRequested = true;
   }
 
   redrawCursor () {
     const context = this.telechart.uiContext;
 
-    context.clearRect( 0, 0, this.chartWidth, ChartVariables.mainMaxHeight );
+    if (this.cursorDrewBefore) {
+      context.clearRect( 0, 0, this.chartWidth, ChartVariables.mainMaxHeight );
+    }
+
+    if (this.cursorOpacity <= 0) {
+      return ( this.cursorDrewBefore = false );
+    }
 
     if (this.isBarChart) {
       this.drawCursorBar( context );
     } else {
       this.drawCursorLine( context );
     }
+
+    this.cursorDrewBefore = true;
   }
 
   drawCursorLine (context) {
@@ -176,6 +185,10 @@ export class Chart extends BaseChart {
   }
 
   redrawMarkers () {
+    if (this.cursorOpacity <= 0) {
+      return;
+    }
+
     const context = this.telechart.uiContext;
     const colors = this.telechart.themeColors;
     const lines = this.series;

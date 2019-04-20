@@ -200,16 +200,20 @@ export class TelechartApi extends EventEmitter {
 
     this._sendMainCanvasEventThrottled = throttle( this._sendMainCanvasEvent.bind( this ), 10 );
     this._sendNavUICanvasEventThrottled = this._sendNavUICanvasEvent.bind( this );
-
-    if (!this._updateRangeViewThrottled) {
-      this._updateRangeViewThrottled = debounce( this.updateRangeView.bind( this ), 50 );
-    }
   }
 
   tick (deltaTime) {
     if (this.telechart) {
       this.telechart.update( deltaTime );
       this.telechart.render();
+    }
+
+    if (this._rangeViewUpdateNeeded && (
+      !this._lastRangeViewUpdate
+      || this._lastRangeViewUpdate + 100 <= performance.now()
+    )) {
+      this.updateRangeView();
+      this._rangeViewUpdateNeeded = false;
     }
   }
 
@@ -281,25 +285,30 @@ export class TelechartApi extends EventEmitter {
   setNavigationRange (range, rangeX) {
     const oldRangeX = this.navigationRangeX;
 
-    this.navigationRange = range;
-    this.navigationRangeX = rangeX;
-
-    if (arraysEqual( oldRangeX, rangeX )) {
+    if (oldRangeX
+      && arraysEqual( oldRangeX, rangeX )) {
       return;
     }
 
-    if (!this._updateRangeViewThrottled) {
-      this._updateRangeViewThrottled = debounce( this.updateRangeView.bind( this ), 50 );
-    }
+    this.navigationRange = range;
+    this.navigationRangeX = rangeX;
 
-    this._updateRangeViewThrottled();
+    this._rangeViewUpdateNeeded = true;
+    this._lastRangeViewUpdate = oldRangeX ? performance.now() : 0;
   }
 
   updateRangeView () {
     const chartWidth = this.environmentOptions && this.environmentOptions.canvasWidth || 500;
 
     const text = this._getRangeViewText( this.navigationRangeX, chartWidth < 400 );
-    const updClassName = 'telechart2-range-view_updating';
+    if (!this._lastRangeViewText || this._lastRangeViewText !== text) {
+      this.rangeViewElement.innerHTML = text;
+      this._lastRangeViewText = text;
+    }
+
+    // removing unnecessary animations for better performance
+
+    /*const updClassName = 'telechart2-range-view_updating';
 
     addClass( this.rangeViewElement, updClassName );
 
@@ -307,7 +316,7 @@ export class TelechartApi extends EventEmitter {
       this.rangeViewElement.innerHTML = text;
 
       removeClass( this.rangeViewElement, updClassName );
-    });
+    });*/
   }
 
   addEventListeners () {

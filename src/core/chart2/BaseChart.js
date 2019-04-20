@@ -389,7 +389,8 @@ export class BaseChart extends EventEmitter {
       this.updateViewportPixel();
     }
 
-    this.eachSeries(line => {
+    for (let i = 0, len = this.series.length; i < len; ++i) {
+      const line = this.series[ i ];
       const hasOpacityAnimation = line.isHiding || line.isShowing;
 
       if (extremesUpdated || hasOpacityAnimation) {
@@ -403,7 +404,7 @@ export class BaseChart extends EventEmitter {
       }
 
       line.update( deltaTime );
-    });
+    }
 
     if (this.yAxisView) {
       if (redrawAxis) {

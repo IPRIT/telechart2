@@ -65,6 +65,11 @@ export class ChartAxisY extends ChartAxis {
     const topBorder = 0;
     const bottomBorder = this.chart.chartHeight + this.chart.seriesOffsetTop + this.chart.seriesOffsetBottom;
 
+    const normalCount = 6 * 2 + 1;
+    const realCount = this.elements.length;
+    const reduceDrawings = normalCount < realCount;
+    const opacityThreshold = .3;
+
     for (let i = 0; i < this.elements.length; ++i) {
       const element = this.elements[ i ];
       const y = this._computeValuePosition( element.value );
@@ -82,6 +87,10 @@ export class ChartAxisY extends ChartAxis {
             : element.animationObject.opacity * element.opacityScale
         )
         : element.opacity;
+
+      if (reduceDrawings && opacity < opacityThreshold) {
+        continue;
+      }
 
       context.globalAlpha = textColorAlpha * opacity * ( this.isDoubleAxis ? line.opacity : 1 );
       context.fillText(element.formattedValue, x, y - 5);
