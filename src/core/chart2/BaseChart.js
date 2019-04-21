@@ -439,6 +439,22 @@ export class BaseChart extends EventEmitter {
         this.areaAdditionalSumsNeeded = false;
       }
     }
+
+    if (this._minMaxUpdateNeeded && (
+      !this._lastMinMaxUpdate
+      || this._lastMinMaxUpdate + 150 <= performance.now()
+    )) {
+      this.updateExtremesAnimations();
+      this._minMaxUpdateNeeded = false;
+    }
+
+    if (this._minMaxUpdateNeeded2 && (
+      !this._lastMinMaxUpdate2
+      || this._lastMinMaxUpdate2 + 150 <= performance.now()
+    )) {
+      this.updateExtremesAnimations2();
+      this._minMaxUpdateNeeded2 = false;
+    }
   }
 
   render () {
@@ -915,16 +931,9 @@ export class BaseChart extends EventEmitter {
       updateAnimation = true;
     }
 
-    if (updateAnimation) {
-      this._updateOrCreateMinMaxYAnimation();
-
-      if (this.yAxisView) {
-        this.yAxisView.requestUpdateAnimations();
-      }
-
-      if (this.yAxisView2) {
-        this.yAxisView2.requestUpdateAnimations();
-      }
+    if (updateAnimation && !this._minMaxUpdateNeeded) {
+      this._minMaxUpdateNeeded = true;
+      this._lastMinMaxUpdate = performance.now();
     }
   }
 
@@ -969,16 +978,33 @@ export class BaseChart extends EventEmitter {
       updateAnimation = true;
     }
 
-    if (updateAnimation) {
-      this._updateOrCreateMinMaxYAnimation2();
+    if (updateAnimation && !this._minMaxUpdateNeeded2) {
+      this._minMaxUpdateNeeded2 = true;
+      this._lastMinMaxUpdate2 = performance.now();
+    }
+  }
+  
+  updateExtremesAnimations () {
+    this._updateOrCreateMinMaxYAnimation();
 
-      if (this.yAxisView) {
-        this.yAxisView.requestUpdateAnimations();
-      }
+    if (this.yAxisView) {
+      this.yAxisView.requestUpdateAnimations();
+    }
 
-      if (this.yAxisView2) {
-        this.yAxisView2.requestUpdateAnimations();
-      }
+    if (this.yAxisView2) {
+      this.yAxisView2.requestUpdateAnimations();
+    }
+  }
+  
+  updateExtremesAnimations2 () {
+    this._updateOrCreateMinMaxYAnimation2();
+
+    if (this.yAxisView) {
+      this.yAxisView.requestUpdateAnimations();
+    }
+
+    if (this.yAxisView2) {
+      this.yAxisView2.requestUpdateAnimations();
     }
   }
 
