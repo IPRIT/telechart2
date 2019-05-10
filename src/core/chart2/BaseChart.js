@@ -789,7 +789,7 @@ export class BaseChart extends EventEmitter {
 
     // if we have no enough points
     // then we don't need to approximate
-    if (endIndex - startIndex < 100 && !this.isNavigatorChart) {
+    if (endIndex - startIndex < 500 && !this.isNavigatorChart) {
       // just save indexes of points for increase performance
       // [ startIndex, endIndex ]
       this._viewportPointsIndexes[ 0 ] = startIndex;
