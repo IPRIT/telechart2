@@ -2,10 +2,16 @@
 
 ## Table of contents
 
+- [Design](#design)
 - [Demo](#demo)
 - [Setup](#setup)
 - [Author](#author)
 - [License](#license)
+
+
+## Design
+
+[Demo page](https://t.me/contest/59)
 
 ## Demo
 
