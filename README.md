@@ -11,7 +11,7 @@
 
 ## Design
 
-[Demo page](https://t.me/contest/59)
+[Design files](https://t.me/contest/59)
 
 ## Demo
 
